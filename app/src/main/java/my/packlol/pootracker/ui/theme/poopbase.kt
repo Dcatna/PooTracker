@@ -24,7 +24,7 @@ data class PoopLog(@ColumnInfo val hour:Int,
 @Dao
 interface PoopDao {
     @Query("Select * FROM PoopLog")
-    fun getAll(): Flow<List<PoopLog>>
+    fun observeAll(): Flow<List<PoopLog>>
 
     @Query("SELECT * FROM PoopLog WHERE id =:id")
     fun loadALLByIds(id:Long) : Flow<PoopLog>
