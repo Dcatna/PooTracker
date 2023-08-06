@@ -40,7 +40,7 @@ import my.packlol.pootracker.ui.theme.DB
 import my.packlol.pootracker.ui.theme.PooTrackerTheme
 import my.packlol.pootracker.ui.theme.PoopLog
 
-val starttime = System.currentTimeMillis()
+val startTime = System.currentTimeMillis()
 
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
