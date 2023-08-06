@@ -1,10 +1,8 @@
 package my.packlol.pootracker
 
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,17 +10,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -33,18 +26,18 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import my.packlol.pootracker.ui.theme.DB
 import my.packlol.pootracker.ui.theme.PooTrackerTheme
 import my.packlol.pootracker.ui.theme.PoopLog
+import java.time.LocalDateTime
 
-val startTime = System.currentTimeMillis()
 
 class MainActivity : ComponentActivity() {
-    @OptIn(ExperimentalMaterial3Api::class)
-    @RequiresApi(Build.VERSION_CODES.O)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,26 +46,7 @@ class MainActivity : ComponentActivity() {
 
             val viewModel = viewModel<Collector>()
             val lists by viewModel.juicerList.collectAsState()
-
-            var hour by remember { mutableStateOf(0) }
-            var minute by remember { mutableStateOf(0) }
-            var second by remember { mutableStateOf(0) }
-
-            LaunchedEffect(key1 = true) {
-                while (true) {
-                    delay(1000)
-                    second += 1
-                    if (second >= 60) {
-                        second = 0
-                        minute += 1
-                        if (minute >= 60) {
-                            minute = 0
-                            hour += 1
-                        }
-                    }
-                }
-            }
-
+            val timeSinceLastPoop by viewModel.timeSinceLastPoop.collectAsState()
 
             PooTrackerTheme {
                 // A surface container using the 'background' color from the theme
@@ -83,20 +57,16 @@ class MainActivity : ComponentActivity() {
                         topBar = {
                             Greeting(
                                 modifier = Modifier.fillMaxWidth(),
-                                hour = hour,
-                                minute = minute,
-                                second = second,
-                                insert = { hour, minute, second ->
-                                    viewModel.insert(hour, minute, second)
-                                }
+                                time = timeSinceLastPoop
                             )
                         },
                         bottomBar =  {
                             Button(onClick = {
-                                viewModel.insert(hour, minute, second)
-                                hour = 0
-                                minute = 0
-                                second = 0
+                                viewModel.insert(
+                                    timeSinceLastPoop.hour,
+                                    timeSinceLastPoop.minute,
+                                    timeSinceLastPoop.second
+                                )
                             }, modifier = Modifier.fillMaxWidth()) {
                                 Text(text = "Reset")
                             }
@@ -140,32 +110,34 @@ fun PoopLogLazyList(
 }
 
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun Greeting(
     modifier: Modifier = Modifier,
-    hour: Int,
-    minute: Int,
-    second: Int,
-    insert:(Int, Int, Int)-> Unit
+    time: Time
 ) {
     Column(
         modifier = modifier.padding(top = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(fontSize = 24.sp, text = "Time Since Last Poop")
-        Text(text = "${hour}:${minute}:${second}")
-        Column {
-            Text(text = "Recent Logs")
-        }
-        Button(onClick = { insert(hour, minute, second)}) {
-            Text(text = "update")
+        if (time.never) {
+            Text(fontSize = 24.sp, text = "Log a poop to start")
+        } else {
+            Text(fontSize = 24.sp, text = "Time Since Last Poop")
+            Text(text = "${time.hour}:${time.minute}:${time.second}")
+            Column {
+                Text(text = "Recent Logs")
+            }
         }
     }
 }
 
 
-
+data class Time(
+    val hour: Int = 0,
+    val minute: Int = 0,
+    val second: Int = 0,
+    val never: Boolean = false
+)
 
 class Collector : ViewModel() {
 
@@ -178,12 +150,40 @@ class Collector : ViewModel() {
             emptyList()
         )
 
+    private val currentTime = flow {
+        while (true) {
+            emit(
+                LocalDateTime.now()
+            )
+            delay(100)
+        }
+    }
 
 
-    fun insert(hour:Int, minute:Int, second:Int){
+    val timeSinceLastPoop = currentTime
+        .combine(juicerList) { time, poopLogs ->
+            val latest = poopLogs.maxByOrNull {
+                it.createdAtEpochSeconds
+            }
+                ?.createdAtEpochSeconds
+                ?: return@combine Time(0, 0, 0, never = true)
+
+            val timeSince = time.minusSeconds(latest)
+
+            Time(timeSince.hour, timeSince.minute, timeSince.second)
+        }
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            Time()
+        )
+
+    fun insert(hour: Int, minute: Int, second: Int) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                dao.insertAll(PoopLog(hour, minute, second))
+                dao.insertAll(
+                    PoopLog(hour, minute, second)
+                )
             }
         }
     }

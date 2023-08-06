@@ -13,13 +13,18 @@ import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 
 @Entity
-data class PoopLog(@ColumnInfo val hour:Int,
-                   @ColumnInfo val minute:Int,
-                   @ColumnInfo val second:Int,
-                   @PrimaryKey(autoGenerate = true) val id: Long = 0)
+data class PoopLog (
+    @ColumnInfo val hour:Int,
+    @ColumnInfo val minute:Int,
+    @ColumnInfo val second:Int,
+    @ColumnInfo val createdAtEpochSeconds: Long = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC),
+    @PrimaryKey(autoGenerate = true) val id: Long = 0
+)
 
 @Dao
 interface PoopDao {
