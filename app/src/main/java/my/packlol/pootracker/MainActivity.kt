@@ -1,8 +1,10 @@
 package my.packlol.pootracker
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -18,11 +21,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.room.TypeConverter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
@@ -34,11 +39,15 @@ import kotlinx.coroutines.withContext
 import my.packlol.pootracker.ui.theme.DB
 import my.packlol.pootracker.ui.theme.PooTrackerTheme
 import my.packlol.pootracker.ui.theme.PoopLog
+import java.time.Duration
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 
 class MainActivity : ComponentActivity() {
 
+    @RequiresApi(Build.VERSION_CODES.O)
+    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -90,6 +99,18 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+object PoopConverters{
+    @TypeConverter
+    fun fromLongtoDaytime(number : Long) : LocalDateTime{
+        return LocalDateTime.ofEpochSecond(number,0 ,ZoneOffset.UTC)
+    }
+
+    @TypeConverter
+    fun fromDaytimetoLong(daytime: LocalDateTime) : Long{
+        return daytime.toEpochSecond(ZoneOffset.UTC)
+    }
+}
+
 @Composable
 fun PoopLogLazyList(
     modifier: Modifier = Modifier,
@@ -103,7 +124,7 @@ fun PoopLogLazyList(
             items = logs,
             key = { it.id }
         ){ poopLog ->
-            Text(poopLog.toString(), modifier = Modifier.padding(top = 12.dp))
+            Text(poopLog.toString(), modifier = Modifier.padding(top = 12.dp), textAlign = TextAlign.Center)
         }
     }
 
@@ -150,6 +171,7 @@ class Collector : ViewModel() {
             emptyList()
         )
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private val currentTime = flow {
         while (true) {
             emit(
@@ -160,17 +182,18 @@ class Collector : ViewModel() {
     }
 
 
-    val timeSinceLastPoop = currentTime
-        .combine(juicerList) { time, poopLogs ->
+    @RequiresApi(Build.VERSION_CODES.O)
+    val timeSinceLastPoop = currentTime.combine(juicerList) {
+            time, poopLogs ->
             val latest = poopLogs.maxByOrNull {
-                it.createdAtEpochSeconds
+                it.daytime
             }
-                ?.createdAtEpochSeconds
+                ?.daytime
                 ?: return@combine Time(0, 0, 0, never = true)
 
-            val timeSince = time.minusSeconds(latest)
+            val timeSince = Duration.between(latest, time)
 
-            Time(timeSince.hour, timeSince.minute, timeSince.second)
+            Time(timeSince.toHours().toInt(), timeSince.toMinutes().toInt(), timeSince.seconds.toInt())
         }
         .stateIn(
             viewModelScope,
