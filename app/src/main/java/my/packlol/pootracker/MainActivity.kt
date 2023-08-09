@@ -52,8 +52,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-
-            val viewModel = viewModel<Collector>()
+            val viewModel = Collector()
             val lists by viewModel.juicerList.collectAsState()
             val timeSinceLastPoop by viewModel.timeSinceLastPoop.collectAsState()
 
@@ -77,7 +76,7 @@ class MainActivity : ComponentActivity() {
                                     timeSinceLastPoop.second
                                 )
                             }, modifier = Modifier.fillMaxWidth()) {
-                                Text(text = "Reset")
+                                Text(text = "New Log")
                             }
                         }
                     ) { paddingValues ->
@@ -182,6 +181,7 @@ class Collector : ViewModel() {
     }
 
 
+
     @RequiresApi(Build.VERSION_CODES.O)
     val timeSinceLastPoop = currentTime.combine(juicerList) {
             time, poopLogs ->
@@ -192,6 +192,7 @@ class Collector : ViewModel() {
                 ?: return@combine Time(0, 0, 0, never = true)
 
             val timeSince = Duration.between(latest, time)
+
 
             Time(timeSince.toHours().toInt(), timeSince.toMinutes().toInt(), timeSince.seconds.toInt())
         }
