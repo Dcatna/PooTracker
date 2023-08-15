@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import my.packlol.pootracker.firebase.PoopApi
 import my.packlol.pootracker.ui.theme.PooTrackerTheme
 import my.packlol.pootracker.ui.theme.PoopDao
 import my.packlol.pootracker.ui.theme.PoopLog
@@ -156,7 +157,8 @@ data class Time(
 )
 
 class Collector(
-    private val dao: PoopDao
+    private val dao: PoopDao,
+    private val poopApi: PoopApi,
 ) : ViewModel() {
 
 
