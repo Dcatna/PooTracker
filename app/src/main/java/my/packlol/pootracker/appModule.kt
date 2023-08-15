@@ -4,7 +4,8 @@ import androidx.room.Room
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import my.packlol.pootracker.firebase.PoopApi
-import my.packlol.pootracker.ui.theme.PoopBase
+import my.packlol.pootracker.local.PoopBase
+import my.packlol.pootracker.ui.MainVM
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
@@ -12,7 +13,7 @@ import org.koin.dsl.module
 val appModule = module {
 
     viewModel {
-        Collector(
+        MainVM(
             dao = get(),
             poopApi = get()
         )

@@ -21,25 +21,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import androidx.room.TypeConverter
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import my.packlol.pootracker.firebase.PoopApi
+import my.packlol.pootracker.local.PoopLog
+import my.packlol.pootracker.ui.MainVM
 import my.packlol.pootracker.ui.theme.PooTrackerTheme
-import my.packlol.pootracker.ui.theme.PoopDao
-import my.packlol.pootracker.ui.theme.PoopLog
 import org.koin.androidx.viewmodel.ext.android.getViewModel
-import java.time.Duration
-import java.time.LocalDateTime
-import java.time.ZoneOffset
 
 
 class MainActivity : ComponentActivity() {
@@ -48,7 +33,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            val viewModel = getViewModel<Collector>()
+            val viewModel = getViewModel<MainVM>()
             val lists by viewModel.juicerList.collectAsState()
             val timeSinceLastPoop by viewModel.timeSinceLastPoop.collectAsState()
 
@@ -94,18 +79,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-object PoopConverters{
-
-    @TypeConverter
-    fun fromLongtoDaytime(number : Long) : LocalDateTime{
-        return LocalDateTime.ofEpochSecond(number,0 ,ZoneOffset.UTC)
-    }
-
-    @TypeConverter
-    fun fromDaytimetoLong(daytime: LocalDateTime) : Long{
-        return daytime.toEpochSecond(ZoneOffset.UTC)
-    }
-}
 
 @Composable
 fun PoopLogLazyList(
@@ -156,56 +129,4 @@ data class Time(
     val never: Boolean = false
 )
 
-class Collector(
-    private val dao: PoopDao,
-    private val poopApi: PoopApi,
-) : ViewModel() {
 
-
-    val juicerList = dao.observeAll()
-        .stateIn(
-            viewModelScope,
-            SharingStarted.WhileSubscribed(5000),
-            emptyList()
-        )
-
-    private val currentTime = flow {
-        while (true) {
-            emit(
-                LocalDateTime.now()
-            )
-            delay(100)
-        }
-    }
-
-
-
-    val timeSinceLastPoop = currentTime.combine(juicerList) {
-            time, poopLogs ->
-            val latest = poopLogs.maxByOrNull {
-                it.daytime
-            }
-                ?.daytime
-                ?: return@combine Time(0, 0, 0, never = true)
-
-            val timeSince = Duration.between(latest, time)
-
-
-            Time(timeSince.toHours().toInt(), timeSince.toMinutes().toInt(), timeSince.seconds.toInt())
-        }
-        .stateIn(
-            viewModelScope,
-            SharingStarted.WhileSubscribed(5000),
-            Time()
-        )
-
-    fun insert(hour: Int, minute: Int, second: Int) {
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                dao.insertAll(
-                    PoopLog(hour, minute, second)
-                )
-            }
-        }
-    }
-}
