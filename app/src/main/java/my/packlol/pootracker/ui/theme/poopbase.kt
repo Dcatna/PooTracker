@@ -55,18 +55,3 @@ interface PoopDao {
 abstract class PoopBase : RoomDatabase() {
     abstract fun poopDao() : PoopDao
 }
-
-object DB{
-    private var db : PoopBase? = null
-    fun getDao() : PoopDao{
-        return db?.poopDao()!!
-    }
-
-    fun createDB(context : Context){
-        if(db==null){
-            db = Room.databaseBuilder(context, PoopBase::class.java, "Poop.db").fallbackToDestructiveMigration().build()
-        }
-    }
-
-
-}

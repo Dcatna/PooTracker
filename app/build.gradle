@@ -2,6 +2,7 @@ plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
     id "org.jetbrains.kotlin.kapt"
+    id 'com.google.gms.google-services'
 }
 
 android {
@@ -57,7 +58,16 @@ dependencies {
     // To use Kotlin annotation processing tool (kapt)
     kapt "androidx.room:room-compiler:$room_version"
 
-    // To use Kotlin annotation processing tool (kapt)
+
+    implementation platform('com.google.firebase:firebase-bom:32.2.2')
+    // When using the BoM, you don't specify versions in Firebase library dependencies
+    // Add the dependency for the Firebase SDK for Google Analytics
+    implementation("com.google.firebase:firebase-analytics-ktx")
+    // TODO: Add the dependencies for any other Firebase products you want to use
+    // See https://firebase.google.com/docs/android/setup#available-libraries
+    // For example, add the dependencies for Firebase Authentication and Cloud Firestore
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx")
 
     // Implementing the `core` module is mandatory for using other use cases.
     implementation 'com.maxkeppeler.sheets-compose-dialogs:core:1.2.0'
@@ -81,4 +91,10 @@ dependencies {
     androidTestImplementation 'androidx.compose.ui:ui-test-junit4'
     debugImplementation 'androidx.compose.ui:ui-tooling'
     debugImplementation 'androidx.compose.ui:ui-test-manifest'
+
+
+    //koin
+    implementation "io.insert-koin:koin-core:3.4.3"
+    implementation "io.insert-koin:koin-android:3.4.3"
+    implementation "io.insert-koin:koin-androidx-compose:3.3.0"
 }
