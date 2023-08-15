@@ -13,13 +13,14 @@ import kotlinx.coroutines.withContext
 import my.packlol.pootracker.Time
 import my.packlol.pootracker.firebase.PoopApi
 import my.packlol.pootracker.local.PoopDao
-import my.packlol.pootracker.local.PoopLog
+import my.packlol.pootracker.sync.FirebaseSyncManager
 import java.time.Duration
 import java.time.LocalDateTime
 
 class MainVM(
     private val dao: PoopDao,
     private val poopApi: PoopApi,
+    private val syncManager: FirebaseSyncManager
 ) : ViewModel() {
 
 
@@ -44,9 +45,9 @@ class MainVM(
     val timeSinceLastPoop = currentTime.combine(juicerList) {
             time, poopLogs ->
         val latest = poopLogs.maxByOrNull {
-            it.daytime
+            it.loggedAt
         }
-            ?.daytime
+            ?.loggedAt
             ?: return@combine Time(0, 0, 0, never = true)
 
         val timeSince = Duration.between(latest, time)
@@ -63,9 +64,7 @@ class MainVM(
     fun insert(hour: Int, minute: Int, second: Int) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                dao.insertAll(
-                    PoopLog(hour, minute, second)
-                )
+
             }
         }
     }

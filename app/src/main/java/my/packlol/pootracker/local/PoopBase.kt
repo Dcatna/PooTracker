@@ -7,5 +7,7 @@ import androidx.room.TypeConverters
 @Database(entities = [PoopLog::class], version = 1)
 @TypeConverters(PoopConverters::class)
 abstract class PoopBase : RoomDatabase() {
+
     abstract fun poopDao() : PoopDao
+
 }

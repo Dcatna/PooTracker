@@ -58,6 +58,10 @@ dependencies {
     // To use Kotlin annotation processing tool (kapt)
     kapt "androidx.room:room-compiler:$room_version"
 
+    implementation("io.insert-koin:koin-androidx-workmanager:3.4.3")
+    implementation "androidx.datastore:datastore-preferences:1.0.0"
+    // Kotlin + coroutines
+    implementation "androidx.work:work-runtime-ktx:2.9.0-alpha01"
 
     implementation platform('com.google.firebase:firebase-bom:32.2.2')
     // When using the BoM, you don't specify versions in Firebase library dependencies

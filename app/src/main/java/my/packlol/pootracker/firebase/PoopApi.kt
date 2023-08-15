@@ -5,48 +5,18 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.ktx.toObject
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
-import my.packlol.pootracker.local.PoopLog
-import java.time.LocalDateTime
-import java.time.ZoneOffset
 
-
-private object FBConstants {
-    const val PoopListCollection = "poop_list_collection"
-}
-
-private fun log(msg: String) {
-    Log.d("API", msg)
-}
-
-fun LocalDateTime.epochSecond() = this.toEpochSecond(ZoneOffset.UTC)
-
-fun PoopLog.toMap(): Map<String, Any> {
-    return mapOf(
-        "savedAt" to daytime.epochSecond(),
-    )
-}
-
-data class FirebaseLog(
-    val savedAt: Long = 0L,
-)
-
-private fun FirebaseLog.toPoopLog(): PoopLog {
-    val time = LocalDateTime.ofEpochSecond(savedAt, 0, ZoneOffset.UTC)
-    return PoopLog(
-        hour = time.hour,
-        minute = time.minute,
-        second = time.second,
-        daytime = time,
-    )
-}
 
 class PoopApi(
     private val db: FirebaseFirestore
 ) {
+    private fun log(msg: String) {
+        Log.d("API", msg)
+    }
 
     private fun getCollection(c: String) = callbackFlow<QuerySnapshot> {
         db.collection(c)
@@ -57,38 +27,37 @@ class PoopApi(
             .addOnFailureListener { exception ->
                 close(exception)
             }
-        awaitCancellation()
+        awaitClose()
     }
 
-    suspend fun updatePoopList(poopLog: PoopLog) {
+    suspend fun updatePoopList(firebaseData: FirebaseData) = callbackFlow<FirebaseData> {
         db.collection(FBConstants.PoopListCollection)
             .add(
-                poopLog.toMap()
+                firebaseData.toMap()
             )
             .addOnSuccessListener { documentReference ->
                log("DocumentSnapshot added with ID: ${documentReference.id}")
+                documentReference.get()
+                    .addOnSuccessListener { documentSnapshot ->
+                        trySend(
+                            documentSnapshot.toObject<FirebaseData>()!!
+                        )
+                    }
+                    .addOnFailureListener { e ->
+                        close(e)
+                    }
             }
             .addOnFailureListener { e ->
                 log( "Error adding document ${e.message}")
+                close(e)
             }
+        awaitClose()
     }
 
     suspend fun getPoopList() = withContext(Dispatchers.IO) {
         val collection = getCollection(FBConstants.PoopListCollection).first()
-        collection.documents.mapNotNull {
-            it.toObject<FirebaseLog>()?.toPoopLog()
+        collection.documents.firstNotNullOfOrNull {
+            it.toObject<FirebaseData>()
         }
     }
 }
-
-
-/*
-@Entity
-data class PoopLog (
-    @ColumnInfo val hour:Int,
-    @ColumnInfo val minute:Int,
-    @ColumnInfo val second:Int,
-    @ColumnInfo val daytime: LocalDateTime = LocalDateTime.now(),
-    @PrimaryKey(autoGenerate = true) val id: Long = 0
-)
- */

@@ -1,8 +1,10 @@
 package my.packlol.pootracker
 
 import android.app.Application
+import my.packlol.pootracker.sync.SyncStarter
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
+import org.koin.androidx.workmanager.koin.workManagerFactory
 import org.koin.core.context.startKoin
 
 
@@ -13,7 +15,10 @@ class App : Application() {
         startKoin {
             androidLogger()
             androidContext(this@App)
+            workManagerFactory()
             modules(appModule)
         }
+
+        SyncStarter.start(this)
     }
 }
