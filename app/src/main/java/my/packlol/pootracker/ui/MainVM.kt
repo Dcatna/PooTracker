@@ -10,10 +10,10 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import my.packlol.pootracker.Time
 import my.packlol.pootracker.firebase.PoopApi
 import my.packlol.pootracker.local.PoopDao
 import my.packlol.pootracker.sync.FirebaseSyncManager
+import my.packlol.pootracker.ui.screens.Time
 import java.time.Duration
 import java.time.LocalDateTime
 
