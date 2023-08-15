@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.map
 
 /**
  * backed by [WorkInfo] from [WorkManager]
+ * manages the [FirebaseSyncer]
  */
 class FirebaseSyncManager(
     private val context: Context,
