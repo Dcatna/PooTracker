@@ -2,70 +2,36 @@ package my.packlol.pootracker.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import my.packlol.pootracker.firebase.PoopApi
-import my.packlol.pootracker.local.PoopDao
-import my.packlol.pootracker.sync.FirebaseSyncManager
-import my.packlol.pootracker.ui.screens.Time
-import java.time.Duration
-import java.time.LocalDateTime
+import my.packlol.pootracker.local.DataStore
+import my.packlol.pootracker.local.UserPrefs
+import my.packlol.pootracker.repository.AuthRepository
+import my.packlol.pootracker.ui.MainUiState.*
 
 class MainVM(
-    private val dao: PoopDao,
-    private val poopApi: PoopApi,
-    private val syncManager: FirebaseSyncManager
+    dataStore: DataStore,
+    authRepository: AuthRepository,
 ) : ViewModel() {
 
+    val mainUiState = combine(
+        dataStore.userPrefs(),
+        authRepository.authState()
+    ) { prefs, authState ->
+        Success(prefs, authState)
+    }.stateIn(
+        scope = viewModelScope,
+        initialValue = Loading,
+        started = SharingStarted.WhileSubscribed(5_000),
+    )
+}
 
-    val juicerList = dao.observeAll()
-        .stateIn(
-            viewModelScope,
-            SharingStarted.WhileSubscribed(5000),
-            emptyList()
-        )
-
-    private val currentTime = flow {
-        while (true) {
-            emit(
-                LocalDateTime.now()
-            )
-            delay(100)
-        }
-    }
-
-
-
-    val timeSinceLastPoop = currentTime.combine(juicerList) {
-            time, poopLogs ->
-        val latest = poopLogs.maxByOrNull {
-            it.loggedAt
-        }
-            ?.loggedAt
-            ?: return@combine Time(0, 0, 0, never = true)
-
-        val timeSince = Duration.between(latest, time)
-
-
-        Time(timeSince.toHours().toInt(), timeSince.toMinutes().toInt(), timeSince.seconds.toInt())
-    }
-        .stateIn(
-            viewModelScope,
-            SharingStarted.WhileSubscribed(5000),
-            Time()
-        )
-
-    fun insert(hour: Int, minute: Int, second: Int) {
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-
-            }
-        }
-    }
+sealed interface MainUiState {
+    data object Loading : MainUiState
+    data class Success(
+        val userPrefs: UserPrefs,
+        val loggedIn: Boolean,
+    ) : MainUiState
 }

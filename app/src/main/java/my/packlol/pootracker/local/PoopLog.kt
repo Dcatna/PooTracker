@@ -8,7 +8,7 @@ import java.util.UUID
 
 @Entity
 data class PoopLog (
-    @ColumnInfo val synced: Boolean,
+    @ColumnInfo val synced: Boolean = false,
     @ColumnInfo val loggedAt: LocalDateTime = LocalDateTime.now(),
     @PrimaryKey val id: UUID = UUID.randomUUID()
 )

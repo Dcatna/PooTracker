@@ -13,4 +13,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "PooTracker"
-include ':app'
+include(":app")

@@ -14,12 +14,10 @@ import kotlinx.coroutines.withContext
 class PoopApi(
     private val db: FirebaseFirestore
 ) {
-    private fun log(msg: String) {
-        Log.d("API", msg)
-    }
+    private fun log(msg: String) { Log.d("API", msg) }
 
-    private fun getCollection(c: String) = callbackFlow<QuerySnapshot> {
-        db.collection(c)
+    private fun getCollection(collectionName: String) = callbackFlow<QuerySnapshot> {
+        db.collection(collectionName)
             .get()
             .addOnSuccessListener { result ->
                 trySend(result)
@@ -35,8 +33,7 @@ class PoopApi(
             .add(
                 firebaseData.toMap()
             )
-            .addOnSuccessListener { documentReference ->
-               log("DocumentSnapshot added with ID: ${documentReference.id}")
+            .addOnSuccessListener { documentReference -> log("DocumentSnapshot added with ID: ${documentReference.id}")
                 documentReference.get()
                     .addOnSuccessListener { documentSnapshot ->
                         trySend(
@@ -55,9 +52,11 @@ class PoopApi(
     }
 
     suspend fun getPoopList() = withContext(Dispatchers.IO) {
-        val collection = getCollection(FBConstants.PoopListCollection).first()
-        collection.documents.firstNotNullOfOrNull {
-            it.toObject<FirebaseData>()
-        }
+       getCollection(FBConstants.PoopListCollection)
+           .first()
+           .documents
+           .firstNotNullOfOrNull { snapshot ->
+               snapshot.toObject<FirebaseData>()
+           }
     }
 }

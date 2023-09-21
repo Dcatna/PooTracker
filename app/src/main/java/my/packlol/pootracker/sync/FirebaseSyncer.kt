@@ -62,7 +62,7 @@ class FirebaseSyncer(
             .getOrElse { return Result.retry() }
 
         val local = poopDao.getAll()
-        val version = dataStore.getVersion().firstOrNull() ?: -1
+        val version = dataStore.version().firstOrNull() ?: -1
 
         val result = suspendRunCatching {
             if (network != null) {
@@ -72,7 +72,7 @@ class FirebaseSyncer(
             // any changes that where local will be synced = false
             // versions are equal if local change not present increase version and update
             val localAfterSync = poopDao.getAll()
-            val versionAfterSync = dataStore.getVersion().first()
+            val versionAfterSync = dataStore.version().first()
 
             val anyUnsynced = localAfterSync.any { !it.synced }
 

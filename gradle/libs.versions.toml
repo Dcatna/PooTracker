@@ -1,0 +1,67 @@
+[versions]
+activityCompose = "1.7.2"
+androidGradlePlugin = "8.1.1"
+coreKtx = "1.12.0"
+espressoCore = "3.5.1"
+junitVersion = "1.1.5"
+junit = "4.13.2"
+kotlin = "1.9.0"
+lifecycleRuntimeKtx = "2.6.2"
+navigationCompose = "2.7.2"
+retrofit = "2.9.0"
+gson = "2.10.1"
+roomVersion = "2.5.2"
+ksp = "1.9.0-1.0.13"
+pagingVersion = "3.2.1"
+pagingComposeVersion = "3.2.1"
+coil = "2.4.0"
+koinVersion="3.4.3"
+koinCompose="3.3.0"
+prefsDatastoreVersion = "1.0.0"
+workRuntimeKtx = "2.9.0-alpha01"
+material3WindowSizeClass = "1.1.1"
+
+[libraries]
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
+androidx-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espressoCore" }
+androidx-junit = { module = "androidx.test.ext:junit", version.ref = "junitVersion" }
+androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
+androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleRuntimeKtx" }
+androidx-lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycleRuntimeKtx" }
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
+androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
+androidx-material3-window-size = { module = "androidx.compose.material3:material3-window-size-class", version.ref = "material3WindowSizeClass" }
+junit = { module = "junit:junit", version.ref = "junit" }
+
+retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
+retrofit-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
+
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+
+room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomVersion" }
+room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomVersion" }
+room-paging = { module = "androidx.room:room-paging", version.ref = "roomVersion" }
+room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomVersion" }
+
+koin-core={module="io.insert-koin:koin-core", version.ref="koinVersion"}
+koin-android={module="io.insert-koin:koin-android", version.ref="koinVersion"}
+koin-compose={module="io.insert-koin:koin-androidx-compose", version.ref="koinCompose"}
+koin-navigation={module="io.insert-koin:koin-androidx-navigation", version.ref="koinVersion"}
+koin-workmanager={module="io.insert-koin:koin-androidx-workmanager", version.ref="koinVersion"}
+
+androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "prefsDatastoreVersion"}
+
+androidx-paging-runtime = { module = "androidx.paging:paging-runtime", version.ref = "pagingVersion" }
+androidx-paging-common = { module = "androidx.paging:paging-common", version.ref = "pagingVersion" }
+androidx-paging-compose = { module = "androidx.paging:paging-compose", version.ref = "pagingComposeVersion" }
+
+coil = { module = "io.coil-kt:coil", version.ref = "coil" }
+coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil" }
+
+ksp = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "androidGradlePlugin" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

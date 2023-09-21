@@ -18,7 +18,6 @@ import kotlinx.coroutines.flow.map
 class FirebaseSyncManager(
     private val context: Context,
 )  {
-
     /**
      * Emits boolean based on the [WorkInfo] state of the [FirebaseSyncer].
      */

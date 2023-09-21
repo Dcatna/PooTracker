@@ -9,5 +9,4 @@ import androidx.room.TypeConverters
 abstract class PoopBase : RoomDatabase() {
 
     abstract fun poopDao() : PoopDao
-
 }
