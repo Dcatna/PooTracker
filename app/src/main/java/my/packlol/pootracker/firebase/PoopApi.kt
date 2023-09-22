@@ -16,8 +16,8 @@ class PoopApi(
 ) {
     private fun log(msg: String) { Log.d("API", msg) }
 
-    private fun getCollection(collectionName: String) = callbackFlow<QuerySnapshot> {
-        db.collection(collectionName)
+    private fun getCollection(path: String) = callbackFlow<QuerySnapshot> {
+        db.collection(path)
             .get()
             .addOnSuccessListener { result ->
                 trySend(result)
@@ -28,8 +28,11 @@ class PoopApi(
         awaitClose()
     }
 
-    suspend fun updatePoopList(firebaseData: FirebaseData) = callbackFlow<FirebaseData> {
-        db.collection(FBConstants.PoopListCollection)
+    suspend fun updatePoopList(
+        uid: String,
+        firebaseData: FirebaseData
+    ) = callbackFlow {
+        db.collection("${FBConstants.UserId}/$uid/${FBConstants.PoopListCollection}")
             .add(
                 firebaseData.toMap()
             )
@@ -51,8 +54,8 @@ class PoopApi(
         awaitClose()
     }
 
-    suspend fun getPoopList() = withContext(Dispatchers.IO) {
-       getCollection(FBConstants.PoopListCollection)
+    suspend fun getPoopList(uid: String) = withContext(Dispatchers.IO) {
+       getCollection("${FBConstants.UserId}/$uid/${FBConstants.PoopListCollection}")
            .first()
            .documents
            .firstNotNullOfOrNull { snapshot ->

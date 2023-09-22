@@ -7,6 +7,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import com.google.gson.Gson
 import my.packlol.pootracker.firebase.PoopApi
 import my.packlol.pootracker.local.DataStore
 import my.packlol.pootracker.local.PoopBase
@@ -37,11 +38,11 @@ val appModule = module {
     }
 
     viewModel {
-        AuthVM(get())
+        AuthVM(get(), get())
     }
 
     viewModel {
-        HomeVM(get(), get())
+        HomeVM(get(), get(), get())
     }
 
     single {
@@ -72,8 +73,10 @@ val appModule = module {
         FirebaseSyncer(get(), get())
     }
 
+    single { Gson() }
+
     single {
-        DataStore(androidContext().dataStore)
+        DataStore(androidContext().dataStore, get())
     }
 
     single {

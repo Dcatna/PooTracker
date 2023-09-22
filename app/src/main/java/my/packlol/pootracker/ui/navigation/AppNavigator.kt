@@ -3,7 +3,7 @@ package my.packlol.pootracker.ui.navigation
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import my.packlol.pootracker.PoopAppState
-import my.packlol.pootracker.ui.auth.AuthScreen
+import my.packlol.pootracker.ui.auth.LoginScreen
 import my.packlol.pootracker.ui.home.HomeScreen
 import my.packlol.pootracker.ui.theme.composableFadeAnim
 
@@ -25,7 +25,12 @@ fun AppNavigator(
     ) {
 
         composableFadeAnim(Screen.Auth.route) {
-            AuthScreen(poopAppState)
+            LoginScreen(
+                poopAppState = poopAppState,
+                onLogin = {
+                    navController.navigate(Screen.Home.route)
+                }
+            )
         }
 
         composableFadeAnim(Screen.Home.route) {

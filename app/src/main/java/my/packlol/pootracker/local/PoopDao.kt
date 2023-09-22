@@ -16,6 +16,9 @@ interface PoopDao {
     @Query("Select * FROM PoopLog")
     fun getAll(): List<PoopLog>
 
+    @Query("Select * FROM PoopLog WHERE uid = :uid")
+    fun getAllByUid(uid: String): List<PoopLog>
+
     @Query("DELETE FROM PoopLog")
     suspend fun deleteAll()
 

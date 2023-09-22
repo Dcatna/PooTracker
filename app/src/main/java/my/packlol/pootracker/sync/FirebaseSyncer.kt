@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
+import androidx.work.Data
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
@@ -15,6 +16,7 @@ import my.packlol.pootracker.firebase.PoopApi
 import my.packlol.pootracker.local.DataStore
 import my.packlol.pootracker.local.PoopDao
 import my.packlol.pootracker.local.PoopLog
+import my.packlol.pootracker.repository.AuthRepository
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.time.Duration
@@ -34,7 +36,12 @@ class FirebaseSyncer(
     private val poopApi by inject<PoopApi>()
     private val dataStore by inject<DataStore>()
 
-    private suspend fun syncLocalWithNetwork(network: FirebaseData, local: List<PoopLog>, localVersion: Int) {
+    private suspend fun syncLocalWithNetwork(
+        network: FirebaseData,
+        local: List<PoopLog>,
+        localVersion: Int,
+        uid: String
+    ) {
         if (network.version > localVersion) {
             // Network version is higher
             // delete any ids synced and not saved to network anymore
@@ -46,67 +53,84 @@ class FirebaseSyncer(
                     poopDao.deleteById(it)
                 }
             // update local to match network
-            dataStore.updateVersion(network.version)
+            dataStore.updateVersion(uid, network.version)
             poopDao.upsertAll(
                 network.logs.map { it.toPoopLog() }
             )
         }
     }
 
+    private suspend fun syncForUid(uid: String) = suspendRunCatching {
+
+        val network = runCatching { poopApi.getPoopList(uid) }
+                .onFailure { it.printStackTrace() }
+                .getOrThrow()
+
+        val local = poopDao.getAllByUid(uid)
+        val version = dataStore.version(uid).firstOrNull() ?: -1
+
+        if (network != null) {
+            syncLocalWithNetwork(network, local, version, uid)
+        }
+        // synced with network at this point update network with local changes
+        // any changes that where local will be synced = false
+        // versions are equal if local change not present increase version and update
+        val localAfterSync = poopDao.getAllByUid(uid)
+        val versionAfterSync = dataStore.version(uid).first()
+
+        val anyUnsynced = localAfterSync.any { !it.synced }
+
+        if (anyUnsynced) {
+            // update network with local after sync and update version
+            val data = poopApi.updatePoopList(
+                uid = uid,
+                FirebaseData(
+                    version = dataStore.updateVersion(uid, versionAfterSync),
+                    logs = localAfterSync.map { it.toFirebaseLog() }
+                )
+            )
+                .first()
+            // use result from the network update to
+            // set the correct sync status for local logs
+            poopDao.upsertAll(
+                data.logs.map { it.toPoopLog() }
+            )
+        }
+    }
+
     override suspend fun doWork(): Result {
 
-        val network = runCatching {
-            poopApi.getPoopList()
+        val syncAll = inputData.getBoolean("all", false)
+
+        val uids = if(syncAll) {
+            dataStore.savedUsers().first().map { it.uid }
+        } else {
+            listOf(inputData.getString("uid") ?: return Result.failure())
         }
-            .onFailure { it.printStackTrace() }
-            .getOrElse { return Result.retry() }
 
-        val local = poopDao.getAll()
-        val version = dataStore.version().firstOrNull() ?: -1
-
-        val result = suspendRunCatching {
-            if (network != null) {
-                syncLocalWithNetwork(network, local, version)
-            }
-            // synced with network at this point update network with local changes
-            // any changes that where local will be synced = false
-            // versions are equal if local change not present increase version and update
-            val localAfterSync = poopDao.getAll()
-            val versionAfterSync = dataStore.version().first()
-
-            val anyUnsynced = localAfterSync.any { !it.synced }
-
-            if (anyUnsynced) {
-                // update network with local after sync and update version
-                val data = poopApi.updatePoopList(
-                    FirebaseData(
-                        version = dataStore.updateVersion(versionAfterSync),
-                        logs = localAfterSync.map { it.toFirebaseLog() }
-                    )
-                )
-                    .first()
-                // use result from the network update to
-                // set the correct sync status for local logs
-                poopDao.upsertAll(
-                    data.logs.map { it.toPoopLog() }
-                )
-            }
+        val result = uids.all { uid ->
+            syncForUid(uid).isSuccess
         }
-        // if the suspendRunCatching block didn't throw and exception
-        // sync was successful otherwise retry sync of data
-        return if (result.isSuccess) {
+        
+        return if (result) {
             Result.success()
         } else {
-            Result.retry()
+            Result.failure()
         }
     }
 
     companion object {
-        fun workRequest() = OneTimeWorkRequestBuilder<FirebaseSyncer>()
+        fun workRequest(uid: String, syncAll: Boolean = false) = OneTimeWorkRequestBuilder<FirebaseSyncer>()
             .setConstraints(
                 Constraints(
                     requiredNetworkType = NetworkType.CONNECTED
                 )
+            )
+            .setInputData(
+                Data.Builder()
+                    .putString("uid", uid)
+                    .putBoolean("all", syncAll)
+                    .build()
             )
             .setBackoffCriteria(
                 duration = Duration.ofSeconds(15),

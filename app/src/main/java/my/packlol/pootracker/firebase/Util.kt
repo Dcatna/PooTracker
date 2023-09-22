@@ -6,6 +6,7 @@ import java.time.ZoneOffset
 
 object FBConstants {
     const val PoopListCollection = "poop_list_collection"
+    const val UserId = "user_uid"
 }
 
 fun LocalDateTime.epochSecond() = this.toEpochSecond(ZoneOffset.UTC)

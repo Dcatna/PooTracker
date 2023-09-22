@@ -1,5 +1,6 @@
 package my.packlol.pootracker.ui.home
 
+import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.SharingStarted
@@ -8,24 +9,41 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import my.packlol.pootracker.local.DataStore
 import my.packlol.pootracker.local.PoopLog
+import my.packlol.pootracker.local.SavedUser
 import my.packlol.pootracker.repository.PoopLogRepository
 import my.packlol.pootracker.sync.FirebaseSyncManager
 import java.time.LocalDateTime
 import java.util.UUID
+import javax.annotation.concurrent.Immutable
 import kotlin.math.log
 
 class HomeVM(
     firebaseSyncManager: FirebaseSyncManager,
-    private val poopLogRepository: PoopLogRepository
+    private val poopLogRepository: PoopLogRepository,
+    userDataStore: DataStore
 ): ViewModel() {
 
     val homeUiState = combine(
         firebaseSyncManager.isSyncing,
+        userDataStore.savedUsers(),
         poopLogRepository.observeAllPoopLogs()
-    ) { syncing, poopLogs ->
+    ) { syncing, savedUsers, poopLogs ->
        HomeUiState(
            syncing = syncing,
-           logs = poopLogs.map { log -> log.toUi() }
+           logsByUser = buildMap {
+               savedUsers.forEach { user ->
+                   put(
+                       key = user,
+                       value = poopLogs
+                           .filter { it.uid == user.uid }
+                           .map { it.toUi() }
+                   )
+               }
+               put(
+                   SavedUser("offline", "offline"),
+                   poopLogs.filter { it.uid == null }.map { it.toUi() }
+               )
+           }
        )
     }
         .stateIn(
@@ -49,13 +67,17 @@ fun PoopLog.toUi(): UiPoopLog {
     )
 }
 
+@Stable
+@Immutable
 data class UiPoopLog(
     val id: UUID,
     val synced: Boolean,
     val time: LocalDateTime
 )
 
+@Stable
+@Immutable
 data class HomeUiState(
     val syncing: Boolean = true,
-    val logs: List<UiPoopLog> = emptyList()
+    val logsByUser: Map<SavedUser, List<UiPoopLog>> = emptyMap()
 )
