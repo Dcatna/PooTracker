@@ -8,7 +8,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import java.util.UUID
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 
 class PoopApi(
@@ -16,50 +20,58 @@ class PoopApi(
 ) {
     private fun log(msg: String) { Log.d("API", msg) }
 
-    private fun getCollection(path: String) = callbackFlow<QuerySnapshot> {
+    private suspend fun getCollection(path: String) = suspendCancellableCoroutine<QuerySnapshot> { cont ->
         db.collection(path)
             .get()
             .addOnSuccessListener { result ->
-                trySend(result)
+                cont.resume(result)
             }
             .addOnFailureListener { exception ->
-                close(exception)
+                cont.resumeWithException(exception)
             }
-        awaitClose()
+    }
+
+    suspend fun getCollectionIdsForUser(uid: String) = suspendCancellableCoroutine { cont ->
+        db.collection(
+            "${FBConstants.UserId}/$uid/${FBConstants.PoopListCollection}"
+        )
+            .get()
+            .addOnSuccessListener { snapshot ->
+                cont.resume(
+                    buildList {
+                        snapshot.documents.forEach { document ->
+                            add(document.id)
+                        }
+                    }
+                )
+            }
+            .addOnFailureListener { e ->
+                log( "Error adding document ${e.message}")
+                cont.resumeWithException(e)
+            }
     }
 
     suspend fun updatePoopList(
         uid: String,
+        collectionId: String,
         firebaseData: FirebaseData
-    ) = callbackFlow {
+    ): Boolean = suspendCancellableCoroutine { cont ->
         db.collection("${FBConstants.UserId}/$uid/${FBConstants.PoopListCollection}")
-            .add(
-                firebaseData.toMap()
-            )
-            .addOnSuccessListener { documentReference -> log("DocumentSnapshot added with ID: ${documentReference.id}")
-                documentReference.get()
-                    .addOnSuccessListener { documentSnapshot ->
-                        trySend(
-                            documentSnapshot.toObject<FirebaseData>()!!
-                        )
-                    }
-                    .addOnFailureListener { e ->
-                        close(e)
-                    }
+            .document(collectionId)
+            .set(firebaseData.toMap())
+            .addOnSuccessListener {
+                cont.resume(true)
             }
             .addOnFailureListener { e ->
                 log( "Error adding document ${e.message}")
-                close(e)
+                cont.resumeWithException(e)
             }
-        awaitClose()
     }
 
-    suspend fun getPoopList(uid: String) = withContext(Dispatchers.IO) {
-       getCollection("${FBConstants.UserId}/$uid/${FBConstants.PoopListCollection}")
-           .first()
-           .documents
-           .firstNotNullOfOrNull { snapshot ->
-               snapshot.toObject<FirebaseData>()
-           }
+    suspend fun getPoopList(uid: String, collectionId: String) = withContext(Dispatchers.IO) {
+        getCollection("${FBConstants.UserId}/$uid/${FBConstants.PoopListCollection}")
+               .documents
+               .find { it.id == collectionId }
+               ?.toObject<FirebaseData>()
     }
 }

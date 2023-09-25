@@ -4,10 +4,13 @@ import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuth.AuthStateListener
 import com.google.firebase.auth.FirebaseUser
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import my.packlol.pootracker.local.DataStore
 import my.packlol.pootracker.local.SavedUser
@@ -18,6 +21,12 @@ class AuthRepository(
     private val userDataStore: DataStore
 ) {
     var currentUser: FirebaseUser? = firebaseAuth.currentUser
+        set(value) {
+            CoroutineScope(Dispatchers.Default).launch {
+                userDataStore.updateLastUid(value?.uid)
+            }
+            field = value
+        }
 
     private val firebaseStateListener = callbackFlow {
 

@@ -54,7 +54,9 @@ class HomeVM(
 
     fun logPoop() {
         viewModelScope.launch {
-            poopLogRepository.updatePoopLog()
+            poopLogRepository.updatePoopLog(
+                UUID.fromString("9b508294-1ec6-479b-9a08-9f0afdd0baad")
+            )
         }
     }
 }
@@ -70,7 +72,7 @@ fun PoopLog.toUi(): UiPoopLog {
 @Stable
 @Immutable
 data class UiPoopLog(
-    val id: UUID,
+    val id: String,
     val synced: Boolean,
     val time: LocalDateTime
 )

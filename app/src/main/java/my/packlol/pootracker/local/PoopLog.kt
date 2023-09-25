@@ -9,7 +9,15 @@ import java.util.UUID
 @Entity
 data class PoopLog (
     @ColumnInfo val uid: String? = null,
+    @ColumnInfo val collectionId: String,
     @ColumnInfo val synced: Boolean = false,
     @ColumnInfo val loggedAt: LocalDateTime = LocalDateTime.now(),
-    @PrimaryKey val id: UUID = UUID.randomUUID()
+    @PrimaryKey val id: String = UUID.randomUUID().toString()
+)
+
+@Entity
+data class PoopCollection(
+    @PrimaryKey val id: String,
+    @ColumnInfo val name: String,
+    @ColumnInfo val uid: String
 )

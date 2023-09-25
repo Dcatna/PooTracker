@@ -17,7 +17,7 @@ object SyncStarter {
             .beginUniqueWork(
                 FirebaseSyncWorkName,
                 ExistingWorkPolicy.KEEP,
-                FirebaseSyncer.workRequest("", syncAll = true)
+                FirebaseSyncer.workRequest(null, syncAll = true)
             )
             .enqueue()
     }

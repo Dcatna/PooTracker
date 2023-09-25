@@ -11,6 +11,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
@@ -19,26 +20,27 @@ class DataStore(
     private val dataStore: DataStore<Preferences>,
     private val gson: Gson
 ) {
-    private fun Preferences.getVersion(
-        uid: String,
-        gson: Gson
+    private fun getVersion(
+        cid: String,
+        prefValue: String?,
     ): Int {
-        return this[versionKey]?.let { s ->
-            gson.fromJson(s, SavedVersions::class.java).versions
-                .find { it.uid == uid }
+        return prefValue?.let { s ->
+            gson.fromJson(s, SavedVersions::class.java)
+                .versions
+                .find { it.cid == cid }
                 ?.version
         }
             ?: -1
     }
 
-    private fun Preferences.savedVersions(gson: Gson): SavedVersions {
-        return this[versionKey]?.let { s ->
+    private fun savedVersions(prefValue: String?): SavedVersions {
+        return prefValue?.let { s ->
             gson.fromJson(s, SavedVersions::class.java)
         }
             ?: SavedVersions(emptyList())
     }
 
-    private fun Preferences.savedUsers(gson: Gson): List<SavedUser> {
+    private fun Preferences.savedUsers(): List<SavedUser> {
         return this[savedUsersKey]?.let {
             gson.fromJson(it, SavedUsers::class.java).users
         }
@@ -64,16 +66,16 @@ class DataStore(
     ): List<SavedUser> {
         val updated = dataStore.edit { mutablePrefs ->
             val new = savedUsers(
-                mutablePrefs.savedUsers(gson)
+                mutablePrefs.savedUsers()
             )
             mutablePrefs[savedUsersKey] = gson.toJson(SavedUsers(new))
         }
-        return updated.savedUsers(gson)
+        return updated.savedUsers()
     }
 
     fun savedUsers(): Flow<List<SavedUser>> {
         return dataStore.data.map { prefs ->
-            prefs.savedUsers(gson)
+            prefs.savedUsers()
         }
     }
 
@@ -101,32 +103,35 @@ class DataStore(
         )
     }
 
-    fun version(uid: String): Flow<Int> {
+    fun version(cid: String): Flow<Int> {
         return dataStore.data.map { prefs ->
-            prefs.getVersion(uid, gson)
+            getVersion(cid, prefs[versionKey])
         }
     }
 
-    suspend fun updateVersion(uid: String, version: Int): Int {
-        return dataStore.edit { mutablePrefs ->
-            gson.toJson(
+    suspend fun updateVersion(
+        collectionId: String,
+        version: Int
+    ): Int {
+        val updated = dataStore.edit { mutablePrefs ->
+            mutablePrefs[versionKey] = gson.toJson(
                 SavedVersions(
-                    mutablePrefs.savedVersions(gson)
+                    savedVersions(mutablePrefs[versionKey])
                         .versions
-                        .filter { it.uid != uid } + Version(uid, version)
+                        .filter { it.cid != collectionId } + Version(collectionId, version)
                 )
             )
         }
-            .getVersion(uid, gson)
+        return getVersion(collectionId, updated[versionKey])
     }
 
     fun lastUid(): Flow<String?> {
-        return dataStore.data.map { prefs -> prefs[lastUidKey] }
+        return dataStore.data.map { prefs -> prefs[lastUidKey]?.ifEmpty { null } }
     }
 
-    suspend fun updateLastUid(uid: String): String? {
+    suspend fun updateLastUid(uid: String?): String? {
         return dataStore.edit { mutablePreferences ->
-            mutablePreferences[lastUidKey] = uid
+            mutablePreferences[lastUidKey] = uid ?: ""
         }[lastUidKey]
     }
 
@@ -153,7 +158,7 @@ data class SavedVersions(
 )
 
 data class Version(
-    val uid: String,
+    val cid: String,
     val version: Int,
 )
 
