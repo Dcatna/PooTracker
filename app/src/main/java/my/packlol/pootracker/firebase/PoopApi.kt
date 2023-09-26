@@ -72,6 +72,6 @@ class PoopApi(
         getCollection("${FBConstants.UserId}/$uid/${FBConstants.PoopListCollection}")
                .documents
                .find { it.id == collectionId }
-               ?.toObject<FirebaseData>()
+               ?.toObject<FirebaseData>()!!
     }
 }

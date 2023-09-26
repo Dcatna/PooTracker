@@ -74,6 +74,9 @@ dependencies {
 
     implementation(libs.androidx.datastore.preferences)
 
+    implementation("com.maxkeppeler.sheets-compose-dialogs:core:1.2.0")
+    implementation("com.maxkeppeler.sheets-compose-dialogs:calendar:1.2.0")
+
     //Paging 3
     implementation(libs.androidx.paging.runtime)
     implementation(libs.androidx.paging.compose)

@@ -80,38 +80,34 @@ class FirebaseSyncer(
     private suspend fun syncPoopLogs(uid: String, collectionId: String) = suspendRunCatching {
 
         val network = poopApi.getPoopList(uid, collectionId)
-
         Log.d(TAG, "firebase data for uid $uid cid $collectionId items: ${network?.logs?.size}")
 
         val local = poopDao.getAllByCid(collectionId)
-
         Log.d(TAG, "local data for cid $collectionId items: ${local.size}")
 
         val version = dataStore.version(collectionId).firstOrNull() ?: -1
-
         Log.d(TAG, "current version for cid $collectionId: $version")
 
-        if (network != null) {
-            syncLocalWithNetwork(
-                network = network,
-                local = local,
-                localVersion = version,
-                uid = uid,
-                collectionId = collectionId
-            )
-        }
+        syncLocalWithNetwork(
+            network = network,
+            local = local,
+            localVersion = version,
+            uid = uid,
+            collectionId = collectionId
+        )
         // synced with network at this point update network with local changes
         // any changes that where local will be synced = false
         // versions are equal if local change not present increase version and update
         val localAfterSync = poopDao.getAllByCid(collectionId)
         Log.d(TAG, "local data for $collectionId after sync items: ${local.size}")
+
         val versionAfterSync = dataStore.version(collectionId).first()
         Log.d(TAG, "current version for $collectionId after sync: $version")
+
         val anyUnsynced = localAfterSync.any { !it.synced }
         Log.d(TAG, "anyUnsynced for $collectionId after sync: $anyUnsynced")
 
-        if (anyUnsynced || (network?.version ?: -1) < version) {
-            // update network with local after sync and update version
+        if (anyUnsynced || network.version < version) {
             val updated = poopApi.updatePoopList(
                 uid = uid,
                 collectionId = collectionId,
@@ -121,8 +117,6 @@ class FirebaseSyncer(
                     logs = localAfterSync.map { it.toFirebaseLog() },
                 )
             )
-            // use result from the network update to
-            // set the correct sync status for local logs
             if (updated) {
                 localAfterSync.forEach { log ->
                     poopDao.updateLog(
