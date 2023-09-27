@@ -75,7 +75,7 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
 
     implementation("com.maxkeppeler.sheets-compose-dialogs:core:1.2.0")
-    implementation("com.maxkeppeler.sheets-compose-dialogs:calendar:1.2.0")
+    implementation("com.maxkeppeler.sheets-compose-dialogs:date-time:1.2.0")
 
     //Paging 3
     implementation(libs.androidx.paging.runtime)
@@ -104,6 +104,8 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:32.3.1"))
     implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("com.google.firebase:firebase-auth-ktx")
+
+    implementation("com.github.skydoves:balloon-compose:1.5.2")
 
     //ROOM
     ksp(libs.room.compiler)

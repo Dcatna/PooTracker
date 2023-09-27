@@ -15,7 +15,6 @@ import my.packlol.pootracker.sync.FirebaseSyncManager
 import java.time.LocalDateTime
 import java.util.UUID
 import javax.annotation.concurrent.Immutable
-import kotlin.math.log
 
 class HomeVM(
     firebaseSyncManager: FirebaseSyncManager,
@@ -82,4 +81,7 @@ data class UiPoopLog(
 data class HomeUiState(
     val syncing: Boolean = true,
     val logsByUser: Map<SavedUser, List<UiPoopLog>> = emptyMap()
-)
+) {
+
+    val logs: List<UiPoopLog> = logsByUser.values.flatten()
+}
