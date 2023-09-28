@@ -58,12 +58,33 @@ class HomeVM(
             )
         }
     }
+
+    fun undoDelete(poopLog: UiPoopLog) {
+        viewModelScope.launch {
+            poopLogRepository.addPoopLog(
+                id = poopLog.id,
+                time = poopLog.time,
+                synced =  poopLog.synced,
+                uid = poopLog.uid,
+                collectionId = poopLog.collectionId
+            )
+        }
+    }
+
+    fun deleteLog(poopLog: UiPoopLog): Boolean {
+        viewModelScope.launch {
+            poopLogRepository.deletePoopLog(poopLog.id)
+        }
+        return true
+    }
 }
 
 fun PoopLog.toUi(): UiPoopLog {
     return UiPoopLog(
         id = this.id,
         synced = this.synced,
+        uid = this.uid,
+        collectionId = this.collectionId,
         time = this.loggedAt,
     )
 }
@@ -72,6 +93,8 @@ fun PoopLog.toUi(): UiPoopLog {
 @Immutable
 data class UiPoopLog(
     val id: String,
+    val uid: String?,
+    val collectionId: String,
     val synced: Boolean,
     val time: LocalDateTime
 )

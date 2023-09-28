@@ -1,15 +1,12 @@
 package my.packlol.pootracker.ui.home
 
-import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import com.google.gson.Gson
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.Month
@@ -18,59 +15,55 @@ import java.time.Month
 fun rememberPoopChartState(
     poopLogs: List<UiPoopLog>,
     monthsPrev: Int = 12,
-    startDate: LocalDateTime = remember { LocalDateTime.now() }
+    startDate: LocalDateTime = remember { LocalDateTime.now() },
 ): PoopChartState {
 
-    data class StateHolder(
-        val dates: List<Long> = emptyList(),
-        val months: List<Int> = emptyList(),
-        val selected: PoopChartState.Selection = PoopChartState.Selection.Days
-    )
+    var selectedMonths by rememberSaveable {
+        mutableStateOf(emptyList<Int>())
+    }
 
-    return rememberSaveable(
+    var selectedDates by rememberSaveable {
+        mutableStateOf(emptyList<Long>())
+    }
+
+    var selected by rememberSaveable {
+        mutableStateOf(PoopChartState.Selection.Days)
+    }
+
+    return remember(
         poopLogs,
-        startDate,
-        saver = Saver(
-            save = {value ->
-                try {
-                    Gson().toJson(
-                        StateHolder(
-                            dates = value.selectedDates.map { it.toEpochDay() },
-                            months = value.selectedMonths.map { it.value },
-                            selected = value.selecting
-                        )
-                    ).also {
-                        Log.d("Saver", it)
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                    ""
-                }
-            },
-            restore = { value ->
-                val saved = try {
-                    Gson().fromJson(value, StateHolder::class.java).also {
-                        Log.d("Saver", "restored $it")
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                    StateHolder(emptyList(), emptyList(), PoopChartState.Selection.Days)
-                }
-                PoopChartState(
-                    poopLogs = poopLogs,
-                    initialMonths = saved.months.map { Month.of(it) },
-                    initialDates = saved.dates.map { LocalDate.ofEpochDay(it) },
-                    initialSelecting = saved.selected,
-                    monthsPrev = monthsPrev,
-                    startDate = startDate
-                )
-            }
-        )
+        selectedDates,
+        selectedMonths
     ) {
         PoopChartState(
             poopLogs = poopLogs,
             startDate = startDate,
-            monthsPrev = monthsPrev
+            monthsPrev = monthsPrev,
+            months = selectedMonths,
+            days = selectedDates,
+            selecting = selected,
+            toggleDate = { date ->
+                selectedDates = if (date.toEpochDay() in selectedDates) {
+                    selectedDates - date.toEpochDay()
+                } else {
+                    selectedDates + date.toEpochDay()
+                }
+                selectedMonths = emptyList()
+                selected = PoopChartState.Selection.Days
+            },
+            toggleMonth = { month ->
+                selectedMonths = if (month.value in selectedMonths) {
+                    selectedMonths - month.value
+                } else {
+                    selectedMonths + month.value
+                }
+                selectedDates = emptyList()
+                selected = PoopChartState.Selection.Months
+            },
+            clear = {
+                selectedMonths = emptyList()
+                selectedDates = emptyList()
+            }
         )
     }
 }
@@ -79,15 +72,20 @@ class PoopChartState(
     val poopLogs: List<UiPoopLog>,
     val startDate: LocalDateTime,
     monthsPrev: Int,
-    initialMonths: List<Month> = emptyList(),
-    initialDates: List<LocalDate> = emptyList(),
-    initialSelecting: Selection = Selection.Days
+    months: List<Int> = emptyList(),
+    days: List<Long> = emptyList(),
+    val selecting: Selection,
+    val toggleDate: (LocalDate) -> Unit,
+    val toggleMonth: (Month) -> Unit,
+    val clear: () -> Unit
 ) {
-    var selectedDates by mutableStateOf(initialDates)
-        private set
+    val selectedDates by derivedStateOf {
+        days.map { LocalDate.ofEpochDay(it) }
+    }
 
-    var selectedMonths by mutableStateOf(initialMonths)
-        private set
+    val selectedMonths by derivedStateOf {
+        months.map { Month.of(it) }
+    }
 
 
     val filteredLogs by derivedStateOf {
@@ -136,34 +134,6 @@ class PoopChartState(
     }
 
     enum class Selection { Days, Months }
-
-    var selecting by mutableStateOf(initialSelecting)
-        private set
-
-    fun selectDate(date: LocalDate) {
-        selectedDates = if (date in selectedDates) {
-            selectedDates - date
-        } else {
-            selectedDates + date
-        }
-        selectedMonths = emptyList()
-        selecting = Selection.Days
-    }
-
-    fun selectMonth(month: Month) {
-        selectedMonths = if (month in selectedMonths) {
-            selectedMonths - month
-        } else {
-            selectedMonths + month
-        }
-        selectedDates = emptyList()
-        selecting = Selection.Months
-    }
-
-    fun clear() {
-        selectedMonths = emptyList()
-        selectedDates = emptyList()
-    }
 
     private fun isLeapYear(year: Int): Boolean {
         return year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)

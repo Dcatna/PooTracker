@@ -21,3 +21,11 @@ data class PoopCollection(
     @ColumnInfo val name: String,
     @ColumnInfo val uid: String
 )
+
+@Entity
+data class OfflineDeleted(
+    @PrimaryKey val id: String,
+    val collectionId: String,
+    val loggedAt: LocalDateTime,
+    val uid: String,
+)

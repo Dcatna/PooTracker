@@ -11,8 +11,6 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkerParameters
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.ktx.auth
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import my.packlol.pootracker.firebase.FirebaseData
@@ -24,7 +22,6 @@ import my.packlol.pootracker.repository.AuthRepository
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.time.Duration
-import java.util.UUID
 
 /**
  * [CoroutineWorker] that pulls data from Firestore and updates the [PoopDao] with new data.
@@ -80,7 +77,7 @@ class FirebaseSyncer(
     private suspend fun syncPoopLogs(uid: String, collectionId: String) = suspendRunCatching {
 
         val network = poopApi.getPoopList(uid, collectionId)
-        Log.d(TAG, "firebase data for uid $uid cid $collectionId items: ${network?.logs?.size}")
+        Log.d(TAG, "firebase data for uid $uid cid $collectionId items: ${network.logs.size}")
 
         val local = poopDao.getAllByCid(collectionId)
         Log.d(TAG, "local data for cid $collectionId items: ${local.size}")
@@ -133,7 +130,7 @@ class FirebaseSyncer(
 
         val uid = authRepository.currentUser?.uid ?: return Result.failure()
 
-        val result = if (syncAll) {
+        val result = if (false) {
             buildSet {
                 addAll(poopApi.getCollectionIdsForUser(uid))
                 addAll(poopDao.getAllCollectionByUid(uid).map { it.id })
@@ -149,7 +146,7 @@ class FirebaseSyncer(
         } else {
             syncPoopLogs(
                 uid = uid,
-                collectionId = inputData.getString("cid") ?: return Result.failure()
+                collectionId = "9b508294-1ec6-479b-9a08-9f0afdd0baad" // inputData.getString("cid") ?: return Result.failure()
             )
                 .isSuccess
         }

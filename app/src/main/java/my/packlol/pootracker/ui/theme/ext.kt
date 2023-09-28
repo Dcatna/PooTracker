@@ -11,6 +11,10 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.navigation.NamedNavArgument
 import androidx.navigation.NavDeepLink
 import androidx.navigation.NavGraphBuilder
@@ -41,6 +45,18 @@ fun Modifier.conditional(condition : Boolean, modifier : Modifier.() -> Modifier
         this
     }
 }
+
+fun Modifier.drawEndDivider(fraction: Float) = this
+    .drawWithCache {
+        onDrawBehind {
+            drawLine(
+                color = Color.Black,
+                strokeWidth = Dp.Hairline.toPx(),
+                start = Offset(size.width, size.height * fraction),
+                end = Offset(size.width, size.height * (1f - fraction))
+            )
+        }
+    }
 
 @Composable
 fun LazyGridState.isScrollingUp(): State<Boolean> {

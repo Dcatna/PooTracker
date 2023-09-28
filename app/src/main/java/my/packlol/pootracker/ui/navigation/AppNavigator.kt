@@ -34,7 +34,7 @@ fun AppNavigator(
         }
 
         composableFadeAnim(Screen.Home.route) {
-            HomeScreen { destination ->
+            HomeScreen(poopAppState) { destination ->
                 navController.navigate(destination.route)
             }
         }

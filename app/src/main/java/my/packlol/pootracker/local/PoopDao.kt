@@ -7,7 +7,6 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
-import java.util.UUID
 
 @Dao
 interface PoopDao {
@@ -16,6 +15,9 @@ interface PoopDao {
 
     @Query("Select * FROM PoopLog")
     fun getAll(): List<PoopLog>
+
+    @Query("Select * FROM PoopLog WHERE id = :id")
+    fun getById(id: String): PoopLog?
 
     @Query("Select * FROM PoopLog WHERE collectionId = :cid")
     fun getAllByCid(cid: String): List<PoopLog>
@@ -37,6 +39,18 @@ interface PoopDao {
 
     @Update
     suspend fun updateLog(poopLog: PoopLog)
+
+    @Insert
+    suspend fun addOfflineDeletedLog(offlineDeleted: OfflineDeleted)
+
+    @Query("SELECT * FROM OFFLINEDELETED")
+    suspend fun getAllOfflineDeletedLogs(): List<OfflineDeleted>
+
+    @Query("SELECT * FROM offlinedeleted WHERE id = :id")
+    suspend fun getOfflineDeletedById(id: String): OfflineDeleted?
+
+    @Delete
+    suspend fun removeFromOfflineDelete(offlineDeleted: OfflineDeleted)
 
     @Query("SELECT * FROM PoopCollection WHERE uid = :uid")
     suspend fun getAllCollectionByUid(uid: String?): List<PoopCollection>

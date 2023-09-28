@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.core.view.WindowCompat
 import my.packlol.pootracker.ui.MainUiState
 import my.packlol.pootracker.ui.MainVM
 import my.packlol.pootracker.ui.navigation.AppNavigator
@@ -33,6 +34,8 @@ class MainActivity : ComponentActivity(), KoinComponent {
         setContent {
 
             val mainVM = koinViewModel<MainVM>()
+
+            WindowCompat.setDecorFitsSystemWindows(window, false)
 
             when (val mainUiState = mainVM.mainUiState.collectAsState().value) {
                 MainUiState.Loading -> {}

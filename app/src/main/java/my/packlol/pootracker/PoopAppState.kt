@@ -135,14 +135,32 @@ class PoopAppState(
         }
     }
 
+    suspend fun showSnackbarWithAction(
+        message: String,
+        duration: SnackbarDuration,
+        actionLabel: String? = null,
+        withDismissAction: Boolean = false
+    ) = snackbarHostState.showSnackbar(
+        message = message,
+        duration = duration,
+        actionLabel = actionLabel,
+        withDismissAction = withDismissAction
+    )
+
+
+
     fun showSnackbar(
         message: String,
-        duration: SnackbarDuration
+        duration: SnackbarDuration,
+        actionLabel: String? = null,
+        withDismissAction: Boolean = false
     ) {
         coroutineScope.launch {
             snackbarHostState.showSnackbar(
                 message = message,
-                duration = duration
+                duration = duration,
+                actionLabel = actionLabel,
+                withDismissAction = withDismissAction,
             )
         }
     }
