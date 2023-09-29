@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.withContext
 import my.packlol.pootracker.local.DataStore
+import my.packlol.pootracker.local.OfflineDeleted
 import my.packlol.pootracker.local.PoopCollection
 import my.packlol.pootracker.local.PoopDao
 import my.packlol.pootracker.local.PoopLog
@@ -29,11 +30,18 @@ class PoopLogRepository(
 
         Log.d("PoopLog", "deleted: $toDelete")
 
-        if (!toDelete.synced) {
-            return@withContext true
-        } else {
-            true
+        if (toDelete.synced) {
+            poopDao.addOfflineDeletedLog(
+                OfflineDeleted(
+                    toDelete.id,
+                    toDelete.collectionId,
+                    toDelete.loggedAt,
+                    toDelete.uid ?: ""
+                )
+            )
+            poopSyncManager.requestSync(toDelete.collectionId)
         }
+        true
     }
 
     suspend fun addPoopLog(

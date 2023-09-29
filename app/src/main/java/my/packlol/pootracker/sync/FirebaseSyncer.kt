@@ -104,7 +104,9 @@ class FirebaseSyncer(
         val anyUnsynced = localAfterSync.any { !it.synced }
         Log.d(TAG, "anyUnsynced for $collectionId after sync: $anyUnsynced")
 
-        if (anyUnsynced || network.version < version) {
+        val toDelete = poopDao.getAllOfflineDeletedLogs()
+
+        if (anyUnsynced || network.version < version || toDelete.isNotEmpty()) {
             val updated = poopApi.updatePoopList(
                 uid = uid,
                 collectionId = collectionId,
@@ -119,6 +121,11 @@ class FirebaseSyncer(
                     poopDao.updateLog(
                         log.copy(synced = true)
                     )
+                }
+                toDelete.forEach { deleted ->
+                    if (deleted.id !in localAfterSync.map { it.id }) {
+                        poopDao.removeFromOfflineDelete(deleted)
+                    }
                 }
             }
         }
