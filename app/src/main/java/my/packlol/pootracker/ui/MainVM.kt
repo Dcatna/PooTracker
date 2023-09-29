@@ -6,14 +6,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import my.packlol.pootracker.local.DataStore
 import my.packlol.pootracker.local.UserPrefs
 import my.packlol.pootracker.repository.AuthRepository
 import my.packlol.pootracker.repository.AuthState
-import my.packlol.pootracker.ui.MainUiState.*
+import my.packlol.pootracker.ui.MainUiState.Loading
+import my.packlol.pootracker.ui.MainUiState.Success
 
 class MainVM(
     dataStore: DataStore,
@@ -22,7 +22,7 @@ class MainVM(
 
     val mainUiState = combine(
         dataStore.userPrefs(),
-        authRepository.authState()
+        authRepository.authState(),
     ) { prefs, authState ->
         Success(prefs, authState)
     }.stateIn(
@@ -30,6 +30,7 @@ class MainVM(
         initialValue = Loading,
         started = SharingStarted.WhileSubscribed(5_000),
     )
+
 
     fun logout() {
         CoroutineScope(Dispatchers.Default).launch {
@@ -42,7 +43,7 @@ sealed interface MainUiState {
     data object Loading : MainUiState
     data class Success(
         val userPrefs: UserPrefs,
-        val authState: AuthState
+        val authState: AuthState,
     ) : MainUiState
 
     val success: Success?

@@ -32,12 +32,12 @@ class FirebaseSyncManager(
      * Only one sync request will run at a time this function will replace any
      * older sync requests.
      */
-    fun requestSync(collectionId: String) {
+    fun requestSync(collectionId: String?) {
         val workManager = WorkManager.getInstance(context)
         workManager.enqueueUniqueWork(
             SyncStarter.FirebaseSyncWorkName,
             ExistingWorkPolicy.REPLACE,
-            FirebaseSyncer.workRequest(collectionId),
+            FirebaseSyncer.workRequest(collectionId, collectionId == null),
         )
     }
 

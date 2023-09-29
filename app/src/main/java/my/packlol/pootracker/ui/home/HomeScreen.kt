@@ -6,6 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -20,6 +22,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.DismissDirection
 import androidx.compose.material3.Divider
@@ -33,15 +36,20 @@ import androidx.compose.material3.SwipeToDismiss
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDismissState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.SaverScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.window.Popup
 import com.maxkeppeker.sheets.core.models.base.rememberUseCaseState
 import com.maxkeppeler.sheets.date_time.DateTimeDialog
@@ -49,6 +57,7 @@ import com.maxkeppeler.sheets.date_time.models.DateTimeConfig
 import com.maxkeppeler.sheets.date_time.models.DateTimeSelection
 import kotlinx.coroutines.launch
 import my.packlol.pootracker.PoopAppState
+import my.packlol.pootracker.PullRefresh
 import my.packlol.pootracker.ui.home.PoopChartState.Selection.Days
 import my.packlol.pootracker.ui.home.PoopChartState.Selection.Months
 import my.packlol.pootracker.ui.navigation.Screen
@@ -58,6 +67,7 @@ import org.koin.androidx.compose.koinViewModel
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.ZoneOffset
 
 @Composable
 fun HomeScreen(
@@ -73,13 +83,16 @@ fun HomeScreen(
     HomeScreen(
         navigate = navigate,
         state = state,
-        onLogButtonClick = homeVM::logPoop,
+        logPoop = {
+
+        },
         deleteLog = { log ->
             homeVM.deleteLog(log)
             scope.launch {
                 val result = poopAppState.showSnackbarWithAction(
                     message = "Undo delete",
                     withDismissAction = true,
+                    actionLabel = "undo",
                     duration = SnackbarDuration.Short
                 )
                 when (result) {
@@ -87,17 +100,35 @@ fun HomeScreen(
                     ActionPerformed -> homeVM.undoDelete(log)
                 }
             }
+        },
+        refresh = {
+            homeVM.refresh()
         }
     )
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+object LocalDateTimeSaver: Saver<MutableState<LocalDateTime?>, Long> {
+    override fun restore(value: Long): MutableState<LocalDateTime?> {
+        return if (value == -1L) {
+            mutableStateOf(null)
+        } else {
+            mutableStateOf(LocalDateTime.ofEpochSecond(value, 0, ZoneOffset.UTC))
+        }
+    }
+
+    override fun SaverScope.save(value: MutableState<LocalDateTime?>): Long {
+        return value.value?.toEpochSecond(ZoneOffset.UTC) ?: -1L
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
 private fun HomeScreen(
     navigate: (Screen) -> Unit = {},
     state: HomeUiState,
-    onLogButtonClick: () -> Unit,
+    logPoop: (collection: UiCollection) -> Unit,
     deleteLog: (UiPoopLog) -> Unit,
+    refresh: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize()) {
 
@@ -105,6 +136,10 @@ private fun HomeScreen(
 
         var dateTimeDialogVisible by rememberSaveable {
             mutableStateOf(false)
+        }
+
+        var selectedDateTime by rememberSaveable(saver = LocalDateTimeSaver) {
+            mutableStateOf<LocalDateTime?>(null)
         }
 
         if (dateTimeDialogVisible) {
@@ -138,6 +173,51 @@ private fun HomeScreen(
             }
         }
 
+        selectedDateTime?.let {
+            Popup(
+                Alignment.Center,
+                onDismissRequest = {
+                    selectedDateTime = null
+                }
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth(0.8f)
+                        .fillMaxHeight(0.6f),
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer
+                ) {
+                    Column(Modifier.padding(32.dp)) {
+                        Text(
+                            "Log poop at",
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                        Text(
+                            text = formatDate(it.toLocalDate()),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            text = formatTime(it.toLocalTime()),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        FlowRow {
+                            state.collections.fastForEach { collection ->
+                                AssistChip(
+                                    onClick = {
+                                        logPoop(collection)
+                                        selectedDateTime = null
+                                    },
+                                    label = {
+                                        Text(collection.name)
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         val poopChartState = rememberPoopChartState(poopLogs = state.logs)
 
         PoopChart(
@@ -163,10 +243,11 @@ private fun HomeScreen(
         Row(
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp)) {
+                .padding(horizontal = 8.dp)
+        ) {
             Button(
                 onClick = {
-                    dateTimeDialogVisible = true
+                    selectedDateTime = clockState.time
                 },
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
@@ -240,16 +321,21 @@ private fun HomeScreen(
                 }
             }
         }
-        LazyColumn(modifier = Modifier.weight(1f)) {
-            items(
-                items = poopChartState.filteredLogs,
-                key = { it.id }
-            ) { log ->
-                PoopListItem(
-                    log = log,
-                    modifier = Modifier.animateItemPlacement()
-                ) {
-                    deleteLog(log)
+        PullRefresh(
+            refreshing = state.syncing,
+            onRefresh = { refresh() }
+        ) {
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                items(
+                    items = poopChartState.filteredLogs,
+                    key = { it.id }
+                ) { log ->
+                    PoopListItem(
+                        log = log,
+                        modifier = Modifier.animateItemPlacement()
+                    ) {
+                        deleteLog(log)
+                    }
                 }
             }
         }
@@ -266,8 +352,15 @@ fun PoopListItem(
 ) {
     val dismissState = rememberDismissState()
 
-    if (dismissState.isDismissed(DismissDirection.EndToStart)) {
-        swipeToDelete()
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(dismissState.isDismissed(DismissDirection.EndToStart)) {
+        if (dismissState.isDismissed(DismissDirection.EndToStart)) {
+            swipeToDelete()
+            scope.launch {
+                dismissState.reset()
+            }
+        }
     }
 
     SwipeToDismiss(

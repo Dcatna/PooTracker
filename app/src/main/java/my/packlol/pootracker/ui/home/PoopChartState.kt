@@ -30,10 +30,15 @@ fun rememberPoopChartState(
         mutableStateOf(PoopChartState.Selection.Days)
     }
 
+    var reverseLayout by rememberSaveable {
+        mutableStateOf(false)
+    }
+
     return remember(
         poopLogs,
         selectedDates,
-        selectedMonths
+        selectedMonths,
+        reverseLayout
     ) {
         PoopChartState(
             poopLogs = poopLogs,
@@ -41,6 +46,7 @@ fun rememberPoopChartState(
             monthsPrev = monthsPrev,
             months = selectedMonths,
             days = selectedDates,
+            reverseLayout = reverseLayout,
             selecting = selected,
             toggleDate = { date ->
                 selectedDates = if (date.toEpochDay() in selectedDates) {
@@ -63,6 +69,9 @@ fun rememberPoopChartState(
             clear = {
                 selectedMonths = emptyList()
                 selectedDates = emptyList()
+            },
+            reverse = {
+                reverseLayout = it
             }
         )
     }
@@ -74,9 +83,11 @@ class PoopChartState(
     monthsPrev: Int,
     months: List<Int> = emptyList(),
     days: List<Long> = emptyList(),
+    val reverseLayout: Boolean,
     val selecting: Selection,
     val toggleDate: (LocalDate) -> Unit,
     val toggleMonth: (Month) -> Unit,
+    val reverse: (Boolean) -> Unit,
     val clear: () -> Unit
 ) {
     val selectedDates by derivedStateOf {
@@ -95,16 +106,10 @@ class PoopChartState(
                 Selection.Months -> it.time.month in selectedMonths
             }
         }
+            .sortedByDescending { it.time }
     }
 
     private val prevMonthsLength by derivedStateOf {
-        List(monthsPrev) {
-            if (it == 0) startDate.dayOfMonth
-            else startDate.month.minus(it.toLong()).length(isLeapYear(startDate.year))
-        }
-    }
-
-    val monthsPrev by derivedStateOf {
         List(monthsPrev) {
             if (it == 0) startDate.dayOfMonth
             else startDate.month.minus(it.toLong()).length(isLeapYear(startDate.year))

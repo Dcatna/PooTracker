@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import my.packlol.pootracker.local.DataStore
+import my.packlol.pootracker.local.PoopCollection
 import my.packlol.pootracker.local.PoopLog
 import my.packlol.pootracker.local.SavedUser
 import my.packlol.pootracker.repository.PoopLogRepository
@@ -17,7 +18,7 @@ import java.util.UUID
 import javax.annotation.concurrent.Immutable
 
 class HomeVM(
-    firebaseSyncManager: FirebaseSyncManager,
+    private val firebaseSyncManager: FirebaseSyncManager,
     private val poopLogRepository: PoopLogRepository,
     userDataStore: DataStore
 ): ViewModel() {
@@ -25,8 +26,9 @@ class HomeVM(
     val homeUiState = combine(
         firebaseSyncManager.isSyncing,
         userDataStore.savedUsers(),
-        poopLogRepository.observeAllPoopLogs()
-    ) { syncing, savedUsers, poopLogs ->
+        poopLogRepository.observeAllPoopLogs(),
+        poopLogRepository.observeAllCollections(),
+    ) { syncing, savedUsers, poopLogs, collections ->
        HomeUiState(
            syncing = syncing,
            logsByUser = buildMap {
@@ -42,7 +44,8 @@ class HomeVM(
                    SavedUser("offline", "offline"),
                    poopLogs.filter { it.uid == null }.map { it.toUi() }
                )
-           }
+           },
+           collections = collections.map { it.toUi() }
        )
     }
         .stateIn(
@@ -56,6 +59,12 @@ class HomeVM(
             poopLogRepository.updatePoopLog(
                 UUID.fromString("9b508294-1ec6-479b-9a08-9f0afdd0baad")
             )
+        }
+    }
+
+    fun refresh() {
+        viewModelScope.launch {
+            firebaseSyncManager.requestSync(null)
         }
     }
 
@@ -89,6 +98,14 @@ fun PoopLog.toUi(): UiPoopLog {
     )
 }
 
+fun PoopCollection.toUi(): UiCollection {
+    return UiCollection(
+        name = this.name,
+        id = this.id,
+        uid = uid
+    )
+}
+
 @Stable
 @Immutable
 data class UiPoopLog(
@@ -101,9 +118,19 @@ data class UiPoopLog(
 
 @Stable
 @Immutable
+data class UiCollection(
+    val name: String,
+    val id: String,
+    val uid: String?,
+)
+
+
+@Stable
+@Immutable
 data class HomeUiState(
     val syncing: Boolean = true,
-    val logsByUser: Map<SavedUser, List<UiPoopLog>> = emptyMap()
+    val logsByUser: Map<SavedUser, List<UiPoopLog>> = emptyMap(),
+    val collections: List<UiCollection> = emptyList()
 ) {
 
     val logs: List<UiPoopLog> = logsByUser.values.flatten()

@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.withContext
 import my.packlol.pootracker.local.DataStore
+import my.packlol.pootracker.local.PoopCollection
 import my.packlol.pootracker.local.PoopDao
 import my.packlol.pootracker.local.PoopLog
 import my.packlol.pootracker.sync.FirebaseSyncManager
@@ -83,6 +84,10 @@ class PoopLogRepository(
         if (!useOffline && uid != null) {
             poopSyncManager.requestSync(collectionId.toString())
         }
+    }
+
+    fun observeAllCollections(): Flow<List<PoopCollection>> {
+        return poopDao.observeAllCollections()
     }
 
     fun observeAllPoopLogs(): Flow<List<PoopLog>> {

@@ -57,15 +57,19 @@ private fun DaysSideText(
 
     Column(
         modifier,
-        verticalArrangement = Arrangement.SpaceEvenly
+        verticalArrangement = Arrangement.SpaceEvenly,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        listOf("", "mon", "tue", "wed", "thurs", "fri", "sat", "sun").forEach {
-            Text(
-                text = it,
-                maxLines = 1,
-                style = MaterialTheme.typography.labelMedium,
-                modifier = Modifier.padding(start = 2.dp)
-            )
+        listOf("", "mon", "tue", "wed", "thur", "fri", "sat", "sun").forEach {
+            Box(modifier = Modifier.weight(1f, true), contentAlignment = Alignment.Center) {
+                Text(
+                    text = it,
+                    maxLines = 1,
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier
+                        .padding(horizontal = 2.dp)
+                )
+            }
         }
     }
 }
@@ -110,15 +114,21 @@ fun PoopChart(
             )
         )
 
-        DaysSideText(
-            Modifier.fillMaxHeight().width(width)
-        )
+        if (poopChartState.reverseLayout) {
+            DaysSideText(
+                Modifier
+                    .fillMaxHeight()
+                    .width(width)
+            )
+        }
         LazyHorizontalGrid(
             rows = GridCells.Fixed(8),
             state = gridState,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxHeight()
+                .weight(1f, true),
             contentPadding = PaddingValues(4.dp),
-            reverseLayout = true
+            reverseLayout = poopChartState.reverseLayout
         ) {
             for (i in 0..poopChartState.totalDays) {
                 item(
@@ -296,6 +306,13 @@ fun PoopChart(
                     }
                 }
             }
+        }
+        if (!poopChartState.reverseLayout) {
+            DaysSideText(
+                Modifier
+                    .fillMaxHeight()
+                    .width(width)
+            )
         }
     }
 }

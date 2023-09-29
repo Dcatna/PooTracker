@@ -54,4 +54,7 @@ interface PoopDao {
 
     @Query("SELECT * FROM PoopCollection WHERE uid = :uid")
     suspend fun getAllCollectionByUid(uid: String?): List<PoopCollection>
+
+    @Query("SELECT * FROM PoopCollection")
+    fun observeAllCollections(): Flow<List<PoopCollection>>
 }

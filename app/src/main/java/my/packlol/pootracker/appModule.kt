@@ -1,9 +1,7 @@
 package my.packlol.pootracker
 
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.room.Room
 import com.google.firebase.FirebaseApp
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -20,8 +18,7 @@ import my.packlol.pootracker.ui.MainVM
 import my.packlol.pootracker.ui.auth.AuthVM
 import my.packlol.pootracker.ui.home.HomeVM
 import org.koin.android.ext.koin.androidContext
-import org.koin.androidx.compose.viewModel
-import org.koin.androidx.viewmodel.dsl.viewModel
+import org.koin.androidx.viewmodel.dsl.viewModelOf
 import org.koin.androidx.workmanager.dsl.worker
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
@@ -29,21 +26,13 @@ import org.koin.dsl.module
 
 val appModule = module {
 
-    viewModel {
-        MainVM(get(), get())
-    }
+    viewModelOf(::MainVM)
 
-    single {
-        AuthRepository(get(), get())
-    }
+    singleOf(::AuthRepository)
 
-    viewModel {
-        AuthVM(get(), get())
-    }
+    viewModelOf(::AuthVM)
 
-    viewModel {
-        HomeVM(get(), get(), get())
-    }
+    viewModelOf(::HomeVM)
 
     single {
         PoopApi(get())

@@ -77,6 +77,8 @@ dependencies {
     implementation("com.maxkeppeler.sheets-compose-dialogs:core:1.2.0")
     implementation("com.maxkeppeler.sheets-compose-dialogs:date-time:1.2.0")
 
+    implementation("androidx.compose.ui:ui-util")
+
     //Paging 3
     implementation(libs.androidx.paging.runtime)
     implementation(libs.androidx.paging.compose)
