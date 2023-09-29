@@ -48,13 +48,13 @@ class AuthRepository(
         firebaseStateListener
     ) { userPrefs, savedUsers, authState ->
         when {
-            userPrefs.useOffline -> AuthState.Offline
             authState.currentUser != null -> {
                 savedUsers
                     .find { it.uid == authState.currentUser?.uid }
                     ?.let { AuthState.LoggedIn(it) }
                     ?: AuthState.LoggedOut
             }
+            userPrefs.useOffline -> AuthState.Offline
             else -> AuthState.LoggedOut
         }
     }
@@ -85,7 +85,7 @@ class AuthRepository(
             }
     }
 
-    suspend fun logout() {
+    fun logout() {
         firebaseAuth.signOut()
     }
 }

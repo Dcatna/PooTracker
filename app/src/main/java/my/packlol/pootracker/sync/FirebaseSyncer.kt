@@ -94,9 +94,13 @@ class FirebaseSyncer(
         )
         // synced with network at this point update network with local changes
         // any changes that where local will be synced = false
-        // versions are equal if local change not present increase version and update
+        // versions are equal if local change not present increase version and update\
+
         val localAfterSync = poopDao.getAllByCid(collectionId)
         Log.d(TAG, "local data for $collectionId after sync items: ${local.size}")
+
+        val toDelete = poopDao.getAllOfflineDeletedLogs()
+        Log.d(TAG, "toDelete data for $collectionId ids: ${toDelete.map { it.id }}")
 
         val versionAfterSync = dataStore.version(collectionId).first()
         Log.d(TAG, "current version for $collectionId after sync: $version")
@@ -104,7 +108,6 @@ class FirebaseSyncer(
         val anyUnsynced = localAfterSync.any { !it.synced }
         Log.d(TAG, "anyUnsynced for $collectionId after sync: $anyUnsynced")
 
-        val toDelete = poopDao.getAllOfflineDeletedLogs()
 
         if (anyUnsynced || network.version < version || toDelete.isNotEmpty()) {
             val updated = poopApi.updatePoopList(
@@ -113,7 +116,7 @@ class FirebaseSyncer(
                 FirebaseData(
                     version = dataStore.updateVersion(collectionId, versionAfterSync + 1)
                         .also { Log.d(TAG, "updated network cid $collectionId, version $version") },
-                    logs = localAfterSync.map { it.toFirebaseLog() },
+                    logs = localAfterSync.filter { log -> log.id !in toDelete.map { it.id } }.map { it.toFirebaseLog() },
                 )
             )
             if (updated) {

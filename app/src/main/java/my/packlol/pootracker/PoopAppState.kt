@@ -6,18 +6,14 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.snapshotFlow
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import my.packlol.pootracker.local.UserPrefs
@@ -35,26 +31,6 @@ fun rememberPoopAppState(
     navController: NavHostController = rememberNavController(),
     snackbarHostState: SnackbarHostState,
 ): PoopAppState {
-
-    LaunchedEffect(authState) {
-        var signedInBefore = false
-        snapshotFlow { authState }.collect { authState ->
-            if (authState is AuthState.LoggedIn) {
-                signedInBefore = true
-                return@collect
-            }
-            if (userPrefs.useOffline || !signedInBefore) {
-                return@collect
-            }
-            coroutineScope.launch {
-                snackbarHostState.showSnackbar(
-                    message = "logged out",
-                    duration = SnackbarDuration.Short
-                )
-            }
-        }
-    }
-
 
     return remember(
         networkMonitor,
@@ -92,7 +68,7 @@ class PoopAppState(
     val onboarded = userPrefs.onboarded
 
     val darkTheme: Boolean
-        @Composable get() = userPrefs.theme == UserTheme.DarkTheme || (userPrefs.theme == UserTheme.DeviceTheme && isSystemInDarkTheme())
+        @Composable get() = userPrefs.darkThemePreference == UserTheme.DarkTheme || (userPrefs.darkThemePreference == UserTheme.DeviceTheme && isSystemInDarkTheme())
 
     val shouldShowBottomBar: Boolean
         get() = windowSizeClass.widthSizeClass == WindowWidthSizeClass.Compact
@@ -113,27 +89,6 @@ class PoopAppState(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = false,
         )
-
-    init {
-        coroutineScope.launch {
-            var prevConnected = connected.value
-            connected.debounce(5_000).collectLatest { connected ->
-                if (!connected) {
-                    prevConnected = false
-                    showSnackbar(
-                        message = "not connected to a network",
-                        duration = SnackbarDuration.Short
-                    )
-                } else if (!prevConnected) {
-                    prevConnected = true
-                    showSnackbar(
-                        message = "reconnected to a network",
-                        duration = SnackbarDuration.Short
-                    )
-                }
-            }
-        }
-    }
 
     suspend fun showSnackbarWithAction(
         message: String,

@@ -10,13 +10,14 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import my.packlol.pootracker.local.DataStore
 import my.packlol.pootracker.local.UserPrefs
+import my.packlol.pootracker.local.UserTheme
 import my.packlol.pootracker.repository.AuthRepository
 import my.packlol.pootracker.repository.AuthState
 import my.packlol.pootracker.ui.MainUiState.Loading
 import my.packlol.pootracker.ui.MainUiState.Success
 
 class MainVM(
-    dataStore: DataStore,
+    private val dataStore: DataStore,
     private val authRepository: AuthRepository,
 ) : ViewModel() {
 
@@ -31,6 +32,26 @@ class MainVM(
         started = SharingStarted.WhileSubscribed(5_000),
     )
 
+
+    fun changeDarkThemePref(pref: UserTheme) {
+        viewModelScope.launch {
+            dataStore.updateUserPrefs { userPrefs ->
+                userPrefs.copy(
+                    darkThemePreference = pref
+                )
+            }
+        }
+    }
+
+    fun changeDynamicThemePref(pref: Boolean) {
+        viewModelScope.launch {
+            dataStore.updateUserPrefs { userPrefs ->
+                userPrefs.copy(
+                    useDynamicTheme = pref
+                )
+            }
+        }
+    }
 
     fun logout() {
         CoroutineScope(Dispatchers.Default).launch {

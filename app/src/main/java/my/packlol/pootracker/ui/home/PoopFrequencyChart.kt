@@ -196,7 +196,8 @@ fun PoopChart(
                                 derivedStateOf {
                                     poopChartState.poopLogs.count {
                                         it.time.month == current.month &&
-                                        it.time.dayOfMonth == current.dayOfMonth
+                                        it.time.dayOfMonth == current.dayOfMonth &&
+                                        it.time.year == current.year
                                     }
                                 }
                             }
@@ -216,7 +217,7 @@ fun PoopChart(
                                         .conditional(current in poopChartState.selectedDates) {
                                             border(2.dp, primaryColor, RoundedCornerShape(8.dp))
                                         }
-                                        .background(Color.LightGray)
+                                        .background(MaterialTheme.colorScheme.onBackground)
                                         .clickable {
                                             onDateClick(current)
                                         }
@@ -225,9 +226,10 @@ fun PoopChart(
                                         text = current.dayOfMonth.toString(),
                                         modifier = Modifier.align(Alignment.Center),
                                         color = if (isStart) {
-                                            MaterialTheme.colorScheme.primary
-                                        } else
-                                            Color.Unspecified,
+                                            MaterialTheme.colorScheme.primaryContainer
+                                        } else {
+                                            MaterialTheme.colorScheme.background
+                                        },
                                         fontWeight = if (isStart) FontWeight.SemiBold else FontWeight.Normal
                                     )
                                 }
@@ -294,9 +296,9 @@ fun PoopChart(
                                             text = current.dayOfMonth.toString(),
                                             modifier = Modifier.align(Alignment.Center),
                                             color = if (isStart) {
-                                                MaterialTheme.colorScheme.primary
+                                                MaterialTheme.colorScheme.surface
                                             } else
-                                                Color.Unspecified,
+                                                MaterialTheme.colorScheme.background,
                                             fontWeight = if (isStart) FontWeight.SemiBold else FontWeight.Normal
                                         )
                                     }

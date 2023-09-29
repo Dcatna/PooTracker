@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -22,6 +23,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.DismissDirection
@@ -41,6 +43,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.SaverScope
@@ -48,8 +51,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.Popup
 import com.maxkeppeker.sheets.core.models.base.rememberUseCaseState
 import com.maxkeppeler.sheets.date_time.DateTimeDialog
@@ -60,7 +65,6 @@ import my.packlol.pootracker.PoopAppState
 import my.packlol.pootracker.PullRefresh
 import my.packlol.pootracker.ui.home.PoopChartState.Selection.Days
 import my.packlol.pootracker.ui.home.PoopChartState.Selection.Months
-import my.packlol.pootracker.ui.navigation.Screen
 import my.packlol.pootracker.ui.theme.conditional
 import my.packlol.pootracker.ui.theme.drawEndDivider
 import org.koin.androidx.compose.koinViewModel
@@ -72,7 +76,6 @@ import java.time.ZoneOffset
 @Composable
 fun HomeScreen(
     poopAppState: PoopAppState,
-    navigate: (Screen) -> Unit,
 ) {
     val homeVM = koinViewModel<HomeVM>()
 
@@ -81,7 +84,6 @@ fun HomeScreen(
     val scope = rememberCoroutineScope()
 
     HomeScreen(
-        navigate = navigate,
         state = state,
         logPoop = {
 
@@ -121,10 +123,11 @@ object LocalDateTimeSaver: Saver<MutableState<LocalDateTime?>, Long> {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class,
+    ExperimentalMaterial3Api::class
+)
 @Composable
 private fun HomeScreen(
-    navigate: (Screen) -> Unit = {},
     state: HomeUiState,
     logPoop: (collection: UiCollection) -> Unit,
     deleteLog: (UiPoopLog) -> Unit,
@@ -173,23 +176,25 @@ private fun HomeScreen(
             }
         }
 
+        val configuration = LocalConfiguration.current
+
         selectedDateTime?.let {
-            Popup(
-                Alignment.Center,
+            var selectedCollection by remember {
+                mutableStateOf(state.collections.firstOrNull())
+            }
+
+            AlertDialog(
+                properties = DialogProperties(usePlatformDefaultWidth = false),
+                modifier = Modifier
+                    .padding(bottom = 128.dp)
+                    .widthIn(max = configuration.screenWidthDp.dp - 80.dp),
                 onDismissRequest = {
                     selectedDateTime = null
-                }
-            ) {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth(0.8f)
-                        .fillMaxHeight(0.6f),
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer
-                ) {
-                    Column(Modifier.padding(32.dp)) {
+                },
+                title = {
+                    Column {
                         Text(
-                            "Log poop at",
+                            "Log Poop At",
                             style = MaterialTheme.typography.titleLarge
                         )
                         Text(
@@ -200,12 +205,21 @@ private fun HomeScreen(
                             text = formatTime(it.toLocalTime()),
                             style = MaterialTheme.typography.bodyMedium
                         )
+                    }
+                },
+                text = {
+                    Column {
+                        Divider()
+                        Text(
+                            text = "Log To Collection",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
+                        )
                         FlowRow {
                             state.collections.fastForEach { collection ->
                                 AssistChip(
                                     onClick = {
-                                        logPoop(collection)
-                                        selectedDateTime = null
+                                        selectedCollection = collection
                                     },
                                     label = {
                                         Text(collection.name)
@@ -214,8 +228,23 @@ private fun HomeScreen(
                             }
                         }
                     }
+                },
+                confirmButton = {
+                    Text(
+                        text = "Log",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .padding(horizontal = 8.dp)
+                            .clickable {
+                                selectedDateTime = null
+                                selectedCollection?.let {
+                                    logPoop(it)
+                                }
+                            },
+                    )
                 }
-            }
+            )
         }
 
         val poopChartState = rememberPoopChartState(poopLogs = state.logs)

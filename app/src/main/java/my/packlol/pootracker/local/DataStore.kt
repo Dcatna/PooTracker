@@ -2,7 +2,6 @@ package my.packlol.pootracker.local
 
 import android.content.Context
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
@@ -11,7 +10,6 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
@@ -54,9 +52,10 @@ class DataStore(
     fun userPrefs(): Flow<UserPrefs> {
         return dataStore.data.map { prefs ->
             UserPrefs(
-                theme = prefs[themeKey].toUserTheme(),
+                darkThemePreference = prefs[themeKey].toUserTheme(),
                 onboarded = prefs[onboardedKey] ?: false,
-                useOffline = prefs[useOfflineKey] ?: false
+                useOffline = prefs[useOfflineKey] ?: false,
+                useDynamicTheme = prefs[useDynamicTheme] ?: false
             )
         }
     }
@@ -85,21 +84,24 @@ class DataStore(
         val updated = dataStore.edit { mutablePrefs ->
             val new = userPrefs(
                 UserPrefs(
-                    theme = mutablePrefs[themeKey].toUserTheme(),
-                    onboarded = mutablePrefs[onboardedKey] ?: false ,
-                    useOffline = mutablePrefs[useOfflineKey] ?: false
+                    darkThemePreference = mutablePrefs[themeKey].toUserTheme(),
+                    onboarded = mutablePrefs[onboardedKey] ?: false,
+                    useOffline = mutablePrefs[useOfflineKey] ?: false,
+                    useDynamicTheme = mutablePrefs[useDynamicTheme] ?: false
                 )
             )
             mutablePrefs.apply {
                 this[onboardedKey] = new.onboarded
-                this[themeKey] = new.theme.ordinal
+                this[themeKey] = new.darkThemePreference.ordinal
                 this[useOfflineKey] = new.useOffline
+                this[useDynamicTheme] = new.useDynamicTheme
             }
         }
         return UserPrefs(
-            theme = updated[themeKey].toUserTheme(),
+            darkThemePreference = updated[themeKey].toUserTheme(),
             onboarded = updated[onboardedKey] ?: false,
-            useOffline = updated[useOfflineKey] ?: false
+            useOffline = updated[useOfflineKey] ?: false,
+            useDynamicTheme = updated[useDynamicTheme] ?: false
         )
     }
 
@@ -142,6 +144,7 @@ class DataStore(
         val useOfflineKey = booleanPreferencesKey("use_offline_key")
         val savedUsersKey = stringPreferencesKey("saved_users_key")
         val lastUidKey = stringPreferencesKey("last_uid_key")
+        val useDynamicTheme = booleanPreferencesKey("use_dynamic_key")
     }
 }
 
@@ -168,7 +171,8 @@ data class SavedUser(
 )
 
 data class UserPrefs(
-    val theme: UserTheme = UserTheme.DeviceTheme,
+    val darkThemePreference: UserTheme = UserTheme.DeviceTheme,
     val onboarded: Boolean = false,
     val useOffline: Boolean = false,
+    val useDynamicTheme: Boolean = false
 )
