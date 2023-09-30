@@ -18,7 +18,7 @@ import my.packlol.pootracker.sync.suspendRunCatching
 
 class AuthRepository(
     private val firebaseAuth: FirebaseAuth,
-    private val userDataStore: DataStore
+    private val userDataStore: DataStore,
 ) {
     var currentUser: FirebaseUser? = firebaseAuth.currentUser
         set(value) {
@@ -94,4 +94,7 @@ sealed interface AuthState {
     data class LoggedIn(val user: SavedUser): AuthState
     data object LoggedOut: AuthState
     data object Offline: AuthState
+
+    val loggedIn: LoggedIn?
+        get() = this as? AuthState.LoggedIn
 }

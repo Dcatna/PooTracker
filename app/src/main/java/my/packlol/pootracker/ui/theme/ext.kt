@@ -46,6 +46,18 @@ fun Modifier.conditional(condition : Boolean, modifier : Modifier.() -> Modifier
     }
 }
 
+fun <T> List<T>.conditional(
+    condition: Boolean,
+    whatIf: List<T>.() -> List<T>,
+    whatElse: List<T>.() -> List<T>,
+): List<T> {
+    return if (condition) {
+        this.whatIf()
+    } else {
+        this.whatElse()
+    }
+}
+
 fun Modifier.drawEndDivider(fraction: Float) = this
     .drawWithCache {
         onDrawBehind {

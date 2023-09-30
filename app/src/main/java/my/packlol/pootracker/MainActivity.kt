@@ -98,7 +98,8 @@ class MainActivity : ComponentActivity(), KoinComponent {
                         state = mainUiState,
                         logout = mainVM::logout,
                         onChangeDynamicColorPreference = mainVM::changeDynamicThemePref,
-                        onChangeDarkThemeConfig = mainVM::changeDarkThemePref
+                        onChangeDarkThemeConfig = mainVM::changeDarkThemePref,
+                        onChangeUseOfflinePreference = mainVM::changeUseOfflinePref
                     )
                 }
             }
@@ -111,7 +112,8 @@ class MainActivity : ComponentActivity(), KoinComponent {
         state: MainUiState.Success,
         logout: () -> Unit,
         onChangeDarkThemeConfig: (darkThemeConfig: UserTheme) -> Unit,
-        onChangeDynamicColorPreference: (useDynamicColor: Boolean) -> Unit
+        onChangeDynamicColorPreference: (useDynamicColor: Boolean) -> Unit,
+        onChangeUseOfflinePreference: (useOffline: Boolean) -> Unit
     ) {
         @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
         val windowSizeClass = calculateWindowSizeClass(activity = this)
@@ -176,7 +178,8 @@ class MainActivity : ComponentActivity(), KoinComponent {
                 onDismiss = { settingsDialogVisible = false },
                 supportDynamicColor = supportsDynamicTheming(),
                 onChangeDarkThemeConfig = onChangeDarkThemeConfig,
-                onChangeDynamicColorPreference = onChangeDynamicColorPreference
+                onChangeDynamicColorPreference = onChangeDynamicColorPreference,
+                onChangeUseOfflinePreference = onChangeUseOfflinePreference
             )
         }
 
@@ -283,6 +286,7 @@ fun SettingsDialog(
     onDismiss: () -> Unit,
     onChangeDynamicColorPreference: (useDynamicColor: Boolean) -> Unit,
     onChangeDarkThemeConfig: (darkThemeConfig: UserTheme) -> Unit,
+    onChangeUseOfflinePreference: (useOffline: Boolean) -> Unit,
 ) {
     val configuration = LocalConfiguration.current
 
@@ -311,6 +315,7 @@ fun SettingsDialog(
                     supportDynamicColor = supportDynamicColor,
                     onChangeDynamicColorPreference = onChangeDynamicColorPreference,
                     onChangeDarkThemeConfig = onChangeDarkThemeConfig,
+                    onChangeUseOfflinePreference = onChangeUseOfflinePreference
                 )
                 Divider(Modifier.padding(top = 8.dp))
             }
@@ -335,18 +340,19 @@ private fun ColumnScope.SettingsPanel(
     supportDynamicColor: Boolean,
     onChangeDynamicColorPreference: (useDynamicColor: Boolean) -> Unit,
     onChangeDarkThemeConfig: (darkThemeConfig: UserTheme) -> Unit,
+    onChangeUseOfflinePreference: (useOffline: Boolean) -> Unit
 ) {
-    SettingsDialogSectionTitle(text = "Theme")
+    SettingsDialogSectionTitle(text = "Use Offline")
     Column(Modifier.selectableGroup()) {
         SettingsDialogThemeChooserRow(
-            text = "Default",
-            selected = true,
-            onClick = {  },
+            text = "Yes",
+            selected = settings.useOffline,
+            onClick = { onChangeUseOfflinePreference(true) } ,
         )
         SettingsDialogThemeChooserRow(
-            text = "Android",
-            selected = false,
-            onClick = { },
+            text = "No",
+            selected = !settings.useOffline,
+            onClick = { onChangeUseOfflinePreference(false) },
         )
     }
     AnimatedVisibility(visible = supportDynamicColor) {

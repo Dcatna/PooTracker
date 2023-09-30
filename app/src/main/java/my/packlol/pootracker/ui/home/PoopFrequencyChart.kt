@@ -44,7 +44,6 @@ import com.skydoves.balloon.compose.Balloon
 import com.skydoves.balloon.compose.setBackgroundColor
 import com.skydoves.balloon.compose.setTextColor
 import my.packlol.pootracker.ui.home.PoopChartState
-import my.packlol.pootracker.ui.theme.LimeGreen
 import my.packlol.pootracker.ui.theme.conditional
 import my.packlol.pootracker.ui.theme.isScrollingUp
 import java.time.LocalDate
@@ -114,7 +113,7 @@ fun PoopChart(
             )
         )
 
-        if (poopChartState.reverseLayout) {
+        if (poopChartState.isReverseLayout) {
             DaysSideText(
                 Modifier
                     .fillMaxHeight()
@@ -128,7 +127,7 @@ fun PoopChart(
                 .fillMaxHeight()
                 .weight(1f, true),
             contentPadding = PaddingValues(4.dp),
-            reverseLayout = poopChartState.reverseLayout
+            reverseLayout = poopChartState.isReverseLayout
         ) {
             for (i in 0..poopChartState.totalDays) {
                 item(
@@ -269,11 +268,11 @@ fun PoopChart(
                                     key = builder
                                 ) { balloonWindow ->
                                     val freqBgColor = when (logsOnDay) {
-                                        1 -> LimeGreen.copy(alpha = 0.2f)
-                                        2 -> LimeGreen.copy(alpha = 0.4f)
-                                        3 -> LimeGreen.copy(alpha = 0.6f)
-                                        4 -> LimeGreen.copy(alpha = 0.8f)
-                                        else -> LimeGreen
+                                        1 -> Color(0xffbbf7d0)
+                                        2 -> Color(0xff86efac)
+                                        3 -> Color(0xff4ade80)
+                                        4 -> Color(0xff22c55e)
+                                        else -> Color(0xff16a34a)
                                     }
                                     Box(
                                         modifier = Modifier
@@ -309,7 +308,7 @@ fun PoopChart(
                 }
             }
         }
-        if (!poopChartState.reverseLayout) {
+        if (!poopChartState.isReverseLayout) {
             DaysSideText(
                 Modifier
                     .fillMaxHeight()

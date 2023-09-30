@@ -5,12 +5,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import my.packlol.pootracker.local.DataStore
 import my.packlol.pootracker.local.PoopCollection
 import my.packlol.pootracker.local.PoopLog
 import my.packlol.pootracker.local.SavedUser
+import my.packlol.pootracker.repository.AuthRepository
+import my.packlol.pootracker.repository.AuthState
 import my.packlol.pootracker.repository.PoopLogRepository
 import my.packlol.pootracker.sync.FirebaseSyncManager
 import java.time.LocalDateTime
@@ -20,15 +24,26 @@ import javax.annotation.concurrent.Immutable
 class HomeVM(
     private val firebaseSyncManager: FirebaseSyncManager,
     private val poopLogRepository: PoopLogRepository,
+    private val authRepository: AuthRepository,
     userDataStore: DataStore
 ): ViewModel() {
+
+    private val authState = authRepository.authState()
+        .distinctUntilChanged()
+        .onEach {
+            when(it) {
+                is AuthState.LoggedIn -> firebaseSyncManager.requestSync(null)
+                else -> Unit
+            }
+        }
 
     val homeUiState = combine(
         firebaseSyncManager.isSyncing,
         userDataStore.savedUsers(),
         poopLogRepository.observeAllPoopLogs(),
         poopLogRepository.observeAllCollections(),
-    ) { syncing, savedUsers, poopLogs, collections ->
+        authState,
+    ) { syncing, savedUsers, poopLogs, collections, authState ->
        HomeUiState(
            syncing = syncing,
            logsByUser = buildMap {
@@ -42,10 +57,16 @@ class HomeVM(
                }
                put(
                    SavedUser("offline", "offline"),
-                   poopLogs.filter { it.uid == null }.map { it.toUi() }
+                   poopLogs.filter {
+                       it.uid == authState.loggedIn?.user?.uid || it.uid == null
+                   }
+                       .map { it.toUi() }
                )
            },
-           collections = collections.map { it.toUi() }
+           collections = collections.filter {
+               it.uid == authState.loggedIn?.user?.uid || it.uid == null
+           }
+               .map { it.toUi() }
        )
     }
         .stateIn(

@@ -196,21 +196,27 @@ private fun ClockControls(
                     .padding(horizontal = 4.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.PlayCircleOutline,
-                    contentDescription = "resume",
-                    tint = MaterialTheme.colorScheme.tertiary,
-                    modifier = Modifier
-                        .padding(2.dp)
-                        .size(42.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .combinedClickable(
-                            onClick = resume,
-                            onLongClick = {
-                                balloonWindow.showAlignTop()
-                            }
-                        )
-                )
+                Column(verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        imageVector = Icons.Default.PlayCircleOutline,
+                        contentDescription = "resume",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .padding(2.dp)
+                            .size(42.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .combinedClickable(
+                                onClick = resume,
+                                onLongClick = {
+                                    balloonWindow.showAlignTop()
+                                }
+                            )
+                    )
+                    Text(
+                        text = "resume",
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
             }
         }
         Balloon(
@@ -237,21 +243,27 @@ private fun ClockControls(
                     .padding(horizontal = 4.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.AccessTime,
-                    contentDescription = "Time",
-                    tint = MaterialTheme.colorScheme.tertiary,
-                    modifier = Modifier
-                        .padding(2.dp)
-                        .size(42.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .combinedClickable(
-                            onClick = changeTime,
-                            onLongClick = {
-                                balloonWindow.showAlignTop()
-                            }
-                        )
-                )
+                Column(verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        imageVector = Icons.Default.AccessTime,
+                        contentDescription = "Time",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .padding(2.dp)
+                            .size(42.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .combinedClickable(
+                                onClick = changeTime,
+                                onLongClick = {
+                                    balloonWindow.showAlignTop()
+                                }
+                            )
+                    )
+                    Text(
+                        text = "change time",
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
             }
         }
     }

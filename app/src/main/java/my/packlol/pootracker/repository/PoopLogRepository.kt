@@ -1,10 +1,12 @@
 package my.packlol.pootracker.repository
 
 import android.util.Log
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import my.packlol.pootracker.local.DataStore
 import my.packlol.pootracker.local.OfflineDeleted
@@ -21,6 +23,22 @@ class PoopLogRepository(
     private val dataStore: DataStore,
     private val authRepository: AuthRepository
 ) {
+    private val defaultCollecitonId = "9b508294-1ec6-479b-9a08-9f0afdd0baad"
+
+    init {
+        CoroutineScope(Dispatchers.IO).launch {
+            poopDao.getAllCollections().ifEmpty {
+                poopDao.upsertCollection(
+                    PoopCollection(
+                        id = defaultCollecitonId,
+                        name = "Default",
+                        uid = null
+                    )
+                )
+            }
+        }
+    }
+
     suspend fun deletePoopLog(id: String) = withContext(Dispatchers.IO) {
         val toDelete = poopDao.getById(id) ?: return@withContext false
 
@@ -51,6 +69,7 @@ class PoopLogRepository(
         synced: Boolean,
         collectionId: String,
     ) = withContext(Dispatchers.IO) {
+
         poopDao.upsert(
             PoopLog(
                 uid = uid,

@@ -62,6 +62,7 @@ class FirebaseSyncer(
             dataStore.updateVersion(collectionId, network.version).also {
                 Log.d(TAG, "local version after update $it")
             }
+
             poopDao.upsertAll(
                 network.logs.map {
                     it.toPoopLog(
@@ -156,7 +157,7 @@ class FirebaseSyncer(
         } else {
             syncPoopLogs(
                 uid = uid,
-                collectionId = "9b508294-1ec6-479b-9a08-9f0afdd0baad" // inputData.getString("cid") ?: return Result.failure()
+                collectionId = inputData.getString("cid") ?: return Result.failure()
             )
                 .isSuccess
         }

@@ -1,13 +1,19 @@
 package my.packlol.pootracker.ui.home
 
 import PoopChart
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -15,7 +21,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -23,13 +28,17 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DeleteOutline
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.AssistChip
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material3.Button
 import androidx.compose.material3.DismissDirection
+import androidx.compose.material3.DismissState
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarResult.*
@@ -37,6 +46,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismiss
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDismissState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -51,15 +61,24 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastForEach
-import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.Popup
 import com.maxkeppeker.sheets.core.models.base.rememberUseCaseState
 import com.maxkeppeler.sheets.date_time.DateTimeDialog
 import com.maxkeppeler.sheets.date_time.models.DateTimeConfig
 import com.maxkeppeler.sheets.date_time.models.DateTimeSelection
+import com.skydoves.balloon.ArrowOrientation
+import com.skydoves.balloon.ArrowPositionRules
+import com.skydoves.balloon.BalloonAnimation
+import com.skydoves.balloon.BalloonHighlightAnimation
+import com.skydoves.balloon.BalloonSizeSpec
+import com.skydoves.balloon.compose.Balloon
+import com.skydoves.balloon.compose.rememberBalloonBuilder
+import com.skydoves.balloon.compose.setBackgroundColor
+import com.skydoves.balloon.compose.setTextColor
 import kotlinx.coroutines.launch
 import my.packlol.pootracker.PoopAppState
 import my.packlol.pootracker.PullRefresh
@@ -133,7 +152,9 @@ private fun HomeScreen(
     deleteLog: (UiPoopLog) -> Unit,
     refresh: () -> Unit,
 ) {
-    Column(Modifier.fillMaxSize()) {
+    Column(
+        Modifier.fillMaxSize()
+    ) {
 
         val clockState = rememberClockState()
 
@@ -144,6 +165,12 @@ private fun HomeScreen(
         var selectedDateTime by rememberSaveable(saver = LocalDateTimeSaver) {
             mutableStateOf<LocalDateTime?>(null)
         }
+
+        var filterBottomSheetVisible by rememberSaveable {
+            mutableStateOf(false)
+        }
+
+        val poopChartState = rememberPoopChartState(poopLogs = state.logs)
 
         if (dateTimeDialogVisible) {
             Popup {
@@ -176,91 +203,88 @@ private fun HomeScreen(
             }
         }
 
-        val configuration = LocalConfiguration.current
-
-        selectedDateTime?.let {
-            var selectedCollection by remember {
-                mutableStateOf(state.collections.firstOrNull())
-            }
-
-            AlertDialog(
-                properties = DialogProperties(usePlatformDefaultWidth = false),
-                modifier = Modifier
-                    .padding(bottom = 128.dp)
-                    .widthIn(max = configuration.screenWidthDp.dp - 80.dp),
-                onDismissRequest = {
-                    selectedDateTime = null
-                },
-                title = {
-                    Column {
-                        Text(
-                            "Log Poop At",
-                            style = MaterialTheme.typography.titleLarge
-                        )
-                        Text(
-                            text = formatDate(it.toLocalDate()),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Text(
-                            text = formatTime(it.toLocalTime()),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                },
-                text = {
-                    Column {
-                        Divider()
-                        Text(
-                            text = "Log To Collection",
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
-                        )
-                        FlowRow {
-                            state.collections.fastForEach { collection ->
-                                AssistChip(
-                                    onClick = {
-                                        selectedCollection = collection
-                                    },
-                                    label = {
-                                        Text(collection.name)
-                                    }
-                                )
-                            }
-                        }
-                    }
-                },
-                confirmButton = {
-                    Text(
-                        text = "Log",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .padding(horizontal = 8.dp)
-                            .clickable {
-                                selectedDateTime = null
-                                selectedCollection?.let {
-                                    logPoop(it)
-                                }
-                            },
-                    )
-                }
-            )
+        var byDateAsc by rememberSaveable {
+            mutableStateOf(false)
         }
 
-        val poopChartState = rememberPoopChartState(poopLogs = state.logs)
-
-        PoopChart(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.4f),
-            poopChartState = poopChartState,
-            onMonthClick = {
-                poopChartState.toggleMonth(it)
+        FilterBottomSheet(
+            visible = filterBottomSheetVisible,
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            reverseChartDirection = poopChartState.isReverseLayout,
+            onChartDirectionChange = {
+                poopChartState.reverseLayout(it)
             },
-            onDateClick = {
-                poopChartState.toggleDate(it)
-            }
+            byDateAsc = byDateAsc,
+            onByDateAscChange = { byDateAsc = it },
+            onDismiss = { filterBottomSheetVisible = false },
         )
+
+        selectedDateTime?.let {
+           LogPoopAlertDialog(
+               selectedDateTime = it,
+               collections = state.collections,
+               onDismiss = { selectedDateTime = null },
+               onConfirmButtonClick = { collection ->
+                   logPoop(collection)
+                   selectedDateTime = null
+               }
+           )
+        }
+
+        var expanded by rememberSaveable {
+            mutableStateOf(true)
+        }
+
+        Column {
+            val colors = listOf(Color.Transparent, MaterialTheme.colorScheme.background)
+            AnimatedVisibility(
+                visible = expanded,
+                enter = slideInVertically { -it } + fadeIn(),
+                exit = slideOutVertically(
+                    animationSpec = tween(500)
+                ) { -it } + fadeOut()
+            ) {
+                   PoopChart(
+                       modifier = Modifier
+                           .fillMaxWidth()
+                           .fillMaxHeight(0.4f),
+                       poopChartState = poopChartState,
+                       onMonthClick = {
+                           poopChartState.toggleMonth(it)
+                       },
+                       onDateClick = {
+                           poopChartState.toggleDate(it)
+                       }
+                   )
+               }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { expanded = !expanded }
+            ) {
+                Icon(
+                    imageVector = if(expanded)
+                        Icons.Filled.KeyboardArrowUp
+                    else
+                        Icons.Filled.KeyboardArrowDown,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.background(
+                        Brush.radialGradient(colors = colors.asReversed())
+                    ).padding(8.dp),
+                )
+                Text(
+                    text = if (expanded)
+                        "hide calendar"
+                    else
+                        "show calendar",
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.padding(end = 8.dp)
+                )
+            }
+       }
+
         DateWithChangeableTime(
             state = clockState,
             onTimeIconClick = {
@@ -286,11 +310,24 @@ private fun HomeScreen(
                 Text("Log Poop")
             }
         }
-
-        Text(
-            text = "currently showing logs for.",
-            style = MaterialTheme.typography.labelLarge
-        )
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 32.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "currently showing logs for.",
+                style = MaterialTheme.typography.labelLarge,
+            )
+            IconButton(onClick = { filterBottomSheetVisible = !filterBottomSheetVisible }) {
+                Icon(
+                    imageVector = Icons.Outlined.FilterList,
+                    contentDescription = "filter"
+                )
+            }
+        }
         LazyRow(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -354,16 +391,50 @@ private fun HomeScreen(
             refreshing = state.syncing,
             onRefresh = { refresh() }
         ) {
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
-                items(
-                    items = poopChartState.filteredLogs,
-                    key = { it.id }
-                ) { log ->
-                    PoopListItem(
-                        log = log,
-                        modifier = Modifier.animateItemPlacement()
-                    ) {
-                        deleteLog(log)
+            val sortedLogs = remember(poopChartState.filteredLogs, byDateAsc) {
+                val seen = mutableSetOf<UiPoopLog>()
+                poopChartState.filteredLogs
+                    .filter { seen.add(it) }
+                    .conditional(
+                        condition = byDateAsc,
+                        whatIf = { sortedBy { it.time } },
+                        whatElse = { sortedByDescending { it.time } }
+                    )
+            }
+
+            if (
+                (poopChartState.selectedDates.isNotEmpty() ||
+                poopChartState.selectedMonths.isNotEmpty()) &&
+                poopChartState.filteredLogs.isEmpty()
+            ) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Text(
+                        text = "No logs for selected dates",
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+            } else if (
+                poopChartState.selectedDates.isEmpty() &&
+                poopChartState.selectedMonths.isEmpty()
+            ) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Text(
+                        text = "Click a day to see poop logs.",
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+            } else {
+                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    items(
+                        items = sortedLogs,
+                        key = { it.id }
+                    ) { log ->
+                        PoopListItem(
+                            log = log,
+                            modifier = Modifier.animateItemPlacement()
+                        ) {
+                            deleteLog(log)
+                        }
                     }
                 }
             }
@@ -371,6 +442,54 @@ private fun HomeScreen(
     }
 }
 
+@Composable
+fun EditCollectionsButton(
+    onClick: () -> Unit
+) {
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val onPrimary = MaterialTheme.colorScheme.onPrimary
+    Column {
+        Balloon(
+            builder = rememberBalloonBuilder {
+                setText("Edit collections")
+                setArrowSize(10)
+                setWidth(BalloonSizeSpec.WRAP)
+                setHeight(BalloonSizeSpec.WRAP)
+                setArrowPositionRules(ArrowPositionRules.ALIGN_ANCHOR)
+                setArrowOrientation(ArrowOrientation.BOTTOM)
+                setArrowPosition(0.5f)
+                setBalloonAnimation(BalloonAnimation.FADE)
+                setBalloonHighlightAnimation(BalloonHighlightAnimation.SHAKE)
+                setPadding(8)
+                setMarginHorizontal(8)
+                setCornerRadius(8f)
+                setTextColor(onPrimary)
+                setBackgroundColor(primaryColor)
+            }
+        ) {
+            IconButton(
+                onClick = onClick
+            ) {
+                Icon(
+                    contentDescription = "edit",
+                    imageVector = Icons.Outlined.Edit
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun Reset(dismissState: DismissState, action: () -> Unit) {
+    val scope = rememberCoroutineScope()
+    LaunchedEffect(key1 = dismissState.dismissDirection) {
+        scope.launch {
+            dismissState.reset()
+            action()
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -381,15 +500,11 @@ fun PoopListItem(
 ) {
     val dismissState = rememberDismissState()
 
-    val scope = rememberCoroutineScope()
-
-    LaunchedEffect(dismissState.isDismissed(DismissDirection.EndToStart)) {
-        if (dismissState.isDismissed(DismissDirection.EndToStart)) {
-            swipeToDelete()
-            scope.launch {
-                dismissState.reset()
+    when  {
+        dismissState.isDismissed(DismissDirection.EndToStart) ->
+            Reset(dismissState = dismissState) {
+                swipeToDelete()
             }
-        }
     }
 
     SwipeToDismiss(
@@ -421,7 +536,10 @@ fun PoopListItem(
             }
         },
         dismissContent = {
-            Surface(Modifier.fillMaxWidth()) {
+            Surface(
+                Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.background
+            ) {
                 Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start, verticalArrangement = Arrangement.Center) {
                     Text(
                         text = formatDate(log.time.toLocalDate()),
@@ -466,7 +584,7 @@ fun daysSinceCreated(days: Int): String {
 }
 
 
-private fun formatTime(t: LocalTime) :String {
+fun formatTime(t: LocalTime) :String {
     val hour = when {
         t.hour > 12 -> (t.hour - 12)
         t.hour == 0 -> 12

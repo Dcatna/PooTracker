@@ -22,7 +22,9 @@ class FirebaseSyncManager(
      * Emits boolean based on the [WorkInfo] state of the [FirebaseSyncer].
      */
     val isSyncing: Flow<Boolean> =
-        WorkManager.getInstance(context).getWorkInfosForUniqueWorkFlow(SyncStarter.FirebaseSyncWorkName)
+        WorkManager
+            .getInstance(context)
+            .getWorkInfosForUniqueWorkFlow(SyncStarter.FirebaseSyncWorkName)
             .map { workInfoList ->
                 workInfoList.anyRunning()
             }

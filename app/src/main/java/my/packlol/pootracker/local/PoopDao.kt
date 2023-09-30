@@ -56,5 +56,11 @@ interface PoopDao {
     suspend fun getAllCollectionByUid(uid: String?): List<PoopCollection>
 
     @Query("SELECT * FROM PoopCollection")
+    suspend fun getAllCollections(): List<PoopCollection>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertCollection(collection: PoopCollection)
+
+    @Query("SELECT * FROM PoopCollection")
     fun observeAllCollections(): Flow<List<PoopCollection>>
 }

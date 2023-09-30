@@ -19,7 +19,7 @@ data class PoopLog (
 data class PoopCollection(
     @PrimaryKey val id: String,
     @ColumnInfo val name: String,
-    @ColumnInfo val uid: String
+    @ColumnInfo val uid: String?
 )
 
 @Entity

@@ -2,8 +2,6 @@ package my.packlol.pootracker.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
@@ -33,28 +31,38 @@ class MainVM(
     )
 
 
-    fun changeDarkThemePref(pref: UserTheme) {
+    fun changeDarkThemePref(darkThemePreference: UserTheme) {
         viewModelScope.launch {
             dataStore.updateUserPrefs { userPrefs ->
                 userPrefs.copy(
-                    darkThemePreference = pref
+                    darkThemePreference = darkThemePreference
                 )
             }
         }
     }
 
-    fun changeDynamicThemePref(pref: Boolean) {
+    fun changeDynamicThemePref(useDynamicTheme: Boolean) {
         viewModelScope.launch {
             dataStore.updateUserPrefs { userPrefs ->
                 userPrefs.copy(
-                    useDynamicTheme = pref
+                    useDynamicTheme = useDynamicTheme
+                )
+            }
+        }
+    }
+
+    fun changeUseOfflinePref(useOffline: Boolean) {
+        viewModelScope.launch {
+            dataStore.updateUserPrefs { userPrefs ->
+                userPrefs.copy(
+                    useOffline = useOffline
                 )
             }
         }
     }
 
     fun logout() {
-        CoroutineScope(Dispatchers.Default).launch {
+        viewModelScope.launch {
             authRepository.logout()
         }
     }

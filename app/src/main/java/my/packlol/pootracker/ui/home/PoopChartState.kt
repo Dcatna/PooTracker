@@ -46,7 +46,7 @@ fun rememberPoopChartState(
             monthsPrev = monthsPrev,
             months = selectedMonths,
             days = selectedDates,
-            reverseLayout = reverseLayout,
+            isReverseLayout = reverseLayout,
             selecting = selected,
             toggleDate = { date ->
                 selectedDates = if (date.toEpochDay() in selectedDates) {
@@ -83,11 +83,11 @@ class PoopChartState(
     monthsPrev: Int,
     months: List<Int> = emptyList(),
     days: List<Long> = emptyList(),
-    val reverseLayout: Boolean,
+    val isReverseLayout: Boolean,
     val selecting: Selection,
     val toggleDate: (LocalDate) -> Unit,
     val toggleMonth: (Month) -> Unit,
-    val reverse: (Boolean) -> Unit,
+    private val reverse: (Boolean) -> Unit,
     val clear: () -> Unit
 ) {
     val selectedDates by derivedStateOf {
@@ -106,7 +106,6 @@ class PoopChartState(
                 Selection.Months -> it.time.month in selectedMonths
             }
         }
-            .sortedByDescending { it.time }
     }
 
     private val prevMonthsLength by derivedStateOf {
@@ -139,6 +138,10 @@ class PoopChartState(
     }
 
     enum class Selection { Days, Months }
+
+    fun reverseLayout(reverse: Boolean) {
+        reverse(reverse)
+    }
 
     private fun isLeapYear(year: Int): Boolean {
         return year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)
