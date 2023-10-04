@@ -2,7 +2,7 @@
 Poop tracker that supports offline saving and using and account to sync logs across devices. The logs are saved using firebase
 and will be synced on app startup.
 
-[https://play.google.com/store/apps/details?id=my.packlol.pootracker](https://play.google.com/store/apps/details?id=my.packlol.pootracker)
+[Googe Play](https://play.google.com/store/apps/details?id=my.packlol.pootracker)
 
 ## Tech Stack
 - [Koin](https://insert-koin.io/)
