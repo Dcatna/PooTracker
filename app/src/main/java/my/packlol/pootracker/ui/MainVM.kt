@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import my.packlol.pootracker.local.DataStore
@@ -11,17 +13,27 @@ import my.packlol.pootracker.local.UserPrefs
 import my.packlol.pootracker.local.UserTheme
 import my.packlol.pootracker.repository.AuthRepository
 import my.packlol.pootracker.repository.AuthState
+import my.packlol.pootracker.sync.FirebaseSyncManager
 import my.packlol.pootracker.ui.MainUiState.Loading
 import my.packlol.pootracker.ui.MainUiState.Success
 
 class MainVM(
     private val dataStore: DataStore,
     private val authRepository: AuthRepository,
+    private val firebaseSyncManager: FirebaseSyncManager,
 ) : ViewModel() {
 
+    private val authState = authRepository.authState()
+        .distinctUntilChanged()
+        .onEach {
+            if (it is AuthState.LoggedIn) {
+                firebaseSyncManager.requestSync(collectionId = null)
+            }
+        }
+    
     val mainUiState = combine(
         dataStore.userPrefs(),
-        authRepository.authState(),
+        authState,
     ) { prefs, authState ->
         Success(prefs, authState)
     }.stateIn(

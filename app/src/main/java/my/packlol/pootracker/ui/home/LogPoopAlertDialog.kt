@@ -7,8 +7,9 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,7 +25,7 @@ import androidx.compose.ui.window.DialogProperties
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun LogPoopAlertDialog(
     selectedDateTime: LocalDateTime,
@@ -70,10 +71,11 @@ fun LogPoopAlertDialog(
                 )
                 FlowRow {
                     collections.fastForEach { collection ->
-                        AssistChip(
+                        FilterChip(
                             onClick = {
                                 selectedCollection = collection
                             },
+                            selected = selectedCollection == collection,
                             label = {
                                 Text(collection.name)
                             }

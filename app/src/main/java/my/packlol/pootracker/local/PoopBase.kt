@@ -5,7 +5,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 
 @Database(
-    entities = [PoopLog::class, PoopCollection::class, OfflineDeleted::class],
+    entities = [PoopLog::class, PoopCollection::class, OfflineDeleteLog::class, OfflineDeletedCollection::class],
     version = 2
 )
 @TypeConverters(PoopConverters::class)

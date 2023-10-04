@@ -20,6 +20,7 @@ class AuthRepository(
     private val firebaseAuth: FirebaseAuth,
     private val userDataStore: DataStore,
 ) {
+
     var currentUser: FirebaseUser? = firebaseAuth.currentUser
         set(value) {
             CoroutineScope(Dispatchers.Default).launch {

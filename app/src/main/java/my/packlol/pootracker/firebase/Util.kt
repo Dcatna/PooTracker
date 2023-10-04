@@ -14,7 +14,9 @@ fun LocalDateTime.epochSecond() = this.toEpochSecond(ZoneOffset.UTC)
 fun FirebaseData.toMap(): Map<String, Any> {
     return mapOf(
         "version" to version,
-        "logs" to logs.map(::toMap)
+        "logs" to logs.map(::toMap),
+        "deleted" to deleted,
+        "name" to name
     )
 }
 
@@ -31,7 +33,9 @@ fun PoopLog.toMap() = mapOf<String, Any>(
 
 data class FirebaseData(
     val version: Int = 0,
-    val logs: List<FirebaseLog> = emptyList()
+    val deleted: Boolean = false,
+    val logs: List<FirebaseLog> = emptyList(),
+    val name: String = ""
 ) {
 
     data class FirebaseLog(

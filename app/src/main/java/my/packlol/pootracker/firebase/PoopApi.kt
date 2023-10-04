@@ -47,6 +47,29 @@ class PoopApi(
             }
     }
 
+    suspend fun deleteCollection(
+        collectionId: String,
+        uid: String,
+    ): Boolean = suspendCancellableCoroutine { cont ->
+        db.collection(
+            "${FBConstants.UserId}/$uid/${FBConstants.PoopListCollection}")
+            .document(collectionId)
+            .set(
+                FirebaseData(
+                    version = -1,
+                    deleted = true,
+                    logs = emptyList()
+                )
+                    .toMap()
+            )
+            .addOnSuccessListener {
+                cont.resume(true)
+            }
+            .addOnFailureListener {
+                cont.resumeWithException(it)
+            }
+    }
+
     suspend fun updatePoopList(
         uid: String,
         collectionId: String,
@@ -68,6 +91,24 @@ class PoopApi(
         getCollection("${FBConstants.UserId}/$uid/${FBConstants.PoopListCollection}")
                .documents
                .find { it.id == collectionId }
-               ?.toObject<FirebaseData>()!!
+               ?.toObject<FirebaseData>()
+               ?: run {
+                   db.collection(
+                       "${FBConstants.UserId}/$uid/${FBConstants.PoopListCollection}"
+                   )
+                       .document()
+                       .set(
+                           FirebaseData(
+                               version = -1,
+                               deleted = false,
+                               logs = emptyList()
+                           )
+                       )
+                   FirebaseData(
+                       version = -1,
+                       deleted = false,
+                       logs = emptyList()
+                   )
+               }
     }
 }

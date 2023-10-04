@@ -16,6 +16,9 @@ interface PoopDao {
     @Query("Select * FROM PoopLog")
     fun getAll(): List<PoopLog>
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun addCollection(poopCollection: PoopCollection)
+
     @Query("Select * FROM PoopLog WHERE id = :id")
     fun getById(id: String): PoopLog?
 
@@ -41,22 +44,37 @@ interface PoopDao {
     suspend fun updateLog(poopLog: PoopLog)
 
     @Insert
-    suspend fun addOfflineDeletedLog(offlineDeleted: OfflineDeleted)
+    suspend fun addOfflineDeletedCollection(offlineDeleted: OfflineDeletedCollection)
 
-    @Query("SELECT * FROM OFFLINEDELETED")
-    suspend fun getAllOfflineDeletedLogs(): List<OfflineDeleted>
-
-    @Query("SELECT * FROM offlinedeleted WHERE id = :id")
-    suspend fun getOfflineDeletedById(id: String): OfflineDeleted?
+    @Query("SELECT * FROM OfflineDeletedCollection")
+    suspend fun getAllOfflineDeletedCollections(): List<OfflineDeletedCollection>
 
     @Delete
-    suspend fun removeFromOfflineDelete(offlineDeleted: OfflineDeleted)
+    suspend fun removeFromOfflineDeletedCollections(offlineDeleted: OfflineDeletedCollection)
+
+    @Insert
+    suspend fun addOfflineDeletedLog(offlineDeleted: OfflineDeleteLog)
+
+    @Query("SELECT * FROM OfflineDeleteLog")
+    suspend fun getAllOfflineDeletedLogs(): List<OfflineDeleteLog>
+
+    @Query("SELECT * FROM OfflineDeleteLog WHERE id = :id")
+    suspend fun getOfflineDeletedById(id: String): OfflineDeleteLog?
+
+    @Delete
+    suspend fun removeFromOfflineDelete(offlineDeleted: OfflineDeleteLog)
 
     @Query("SELECT * FROM PoopCollection WHERE uid = :uid")
     suspend fun getAllCollectionByUid(uid: String?): List<PoopCollection>
 
+    @Query("SELECT * FROM PoopCollection WHERE id = :cid")
+    suspend fun getCollectionById(cid: String): PoopCollection?
+
     @Query("SELECT * FROM PoopCollection")
     suspend fun getAllCollections(): List<PoopCollection>
+
+    @Delete
+    suspend fun deleteCollection(collection: PoopCollection)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertCollection(collection: PoopCollection)

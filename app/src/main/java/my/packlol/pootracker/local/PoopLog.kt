@@ -1,6 +1,5 @@
 package my.packlol.pootracker.local
 
-import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import java.time.LocalDateTime
@@ -8,24 +7,35 @@ import java.util.UUID
 
 @Entity
 data class PoopLog (
-    @ColumnInfo val uid: String? = null,
-    @ColumnInfo val collectionId: String,
-    @ColumnInfo val synced: Boolean = false,
-    @ColumnInfo val loggedAt: LocalDateTime = LocalDateTime.now(),
-    @PrimaryKey val id: String = UUID.randomUUID().toString()
+    @PrimaryKey val id: String = randomUUIDString(),
+    val uid: String? = null,
+    val collectionId: String,
+    val synced: Boolean = false,
+    val loggedAt: LocalDateTime = LocalDateTime.now()
 )
 
 @Entity
 data class PoopCollection(
-    @PrimaryKey val id: String,
-    @ColumnInfo val name: String,
-    @ColumnInfo val uid: String?
+    @PrimaryKey val id: String = randomUUIDString(),
+    val name: String,
+    val uid: String?
 )
 
 @Entity
-data class OfflineDeleted(
+data class OfflineDeleteLog(
     @PrimaryKey val id: String,
     val collectionId: String,
     val loggedAt: LocalDateTime,
     val uid: String,
 )
+
+@Entity
+data class OfflineDeletedCollection(
+    @PrimaryKey
+    val collectionId: String,
+    val uid: String,
+)
+
+private fun randomUUIDString(): String {
+    return UUID.randomUUID().toString()
+}

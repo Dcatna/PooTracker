@@ -106,7 +106,7 @@ class PoopAppState(
 
     fun showSnackbar(
         message: String,
-        duration: SnackbarDuration,
+        duration: SnackbarDuration = SnackbarDuration.Short,
         actionLabel: String? = null,
         withDismissAction: Boolean = false
     ) {

@@ -3,10 +3,11 @@ package my.packlol.pootracker.ui.home
 import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import my.packlol.pootracker.local.DataStore
@@ -14,11 +15,9 @@ import my.packlol.pootracker.local.PoopCollection
 import my.packlol.pootracker.local.PoopLog
 import my.packlol.pootracker.local.SavedUser
 import my.packlol.pootracker.repository.AuthRepository
-import my.packlol.pootracker.repository.AuthState
 import my.packlol.pootracker.repository.PoopLogRepository
 import my.packlol.pootracker.sync.FirebaseSyncManager
 import java.time.LocalDateTime
-import java.util.UUID
 import javax.annotation.concurrent.Immutable
 
 class HomeVM(
@@ -28,14 +27,10 @@ class HomeVM(
     userDataStore: DataStore
 ): ViewModel() {
 
-    private val authState = authRepository.authState()
-        .distinctUntilChanged()
-        .onEach {
-            when(it) {
-                is AuthState.LoggedIn -> firebaseSyncManager.requestSync(null)
-                else -> Unit
-            }
-        }
+    private val authState = authRepository.authState().distinctUntilChanged()
+
+    private val errorChannel = Channel<HomeError>()
+    val errors = errorChannel.receiveAsFlow()
 
     val homeUiState = combine(
         firebaseSyncManager.isSyncing,
@@ -44,6 +39,7 @@ class HomeVM(
         poopLogRepository.observeAllCollections(),
         authState,
     ) { syncing, savedUsers, poopLogs, collections, authState ->
+       val putLogs = mutableSetOf<String>()
        HomeUiState(
            syncing = syncing,
            logsByUser = buildMap {
@@ -51,14 +47,14 @@ class HomeVM(
                    put(
                        key = user,
                        value = poopLogs
-                           .filter { it.uid == user.uid }
+                           .filter { it.uid == user.uid && putLogs.add(it.id) }
                            .map { it.toUi() }
                    )
                }
                put(
                    SavedUser("offline", "offline"),
                    poopLogs.filter {
-                       it.uid == authState.loggedIn?.user?.uid || it.uid == null
+                       it.uid == null && putLogs.add(it.id)
                    }
                        .map { it.toUi() }
                )
@@ -66,7 +62,9 @@ class HomeVM(
            collections = collections.filter {
                it.uid == authState.loggedIn?.user?.uid || it.uid == null
            }
-               .map { it.toUi() }
+               .map {
+                   it.toUi()
+               }
        )
     }
         .stateIn(
@@ -75,12 +73,59 @@ class HomeVM(
             HomeUiState()
         )
 
-    fun logPoop() {
+    fun addCollection(name: String, offline: Boolean) {
         viewModelScope.launch {
-            poopLogRepository.updatePoopLog(
-                UUID.fromString("9b508294-1ec6-479b-9a08-9f0afdd0baad")
-            )
+            runCatching {
+                poopLogRepository.addCollection(name, offline)
+            }
         }
+    }
+
+    fun logPoop(
+        time: LocalDateTime,
+        collectionId: String,
+    ) {
+        viewModelScope.launch {
+            runCatching {
+                poopLogRepository.updatePoopLog(
+                    collectionId,
+                    time
+                )
+            }
+                .onFailure {
+                    errorChannel.send(HomeError.FailedToAdd)
+                }
+        }
+    }
+
+    fun deleteCollection(cid: String) {
+        viewModelScope.launch {
+            runCatching {
+                poopLogRepository.deleteCollection(
+                    id = cid,
+                    onCantDeleteLast = {
+                        errorChannel.trySend(HomeError.FailedToDelete)
+                    }
+                )
+            }
+                .onFailure {
+                    it.printStackTrace()
+                    errorChannel.trySend(HomeError.FailedToDelete)
+                }
+        }
+    }
+
+    fun editCollection(name: String, cid: String) {
+        viewModelScope.launch {
+        runCatching {
+            poopLogRepository.updateCollection(cid) { collection ->
+                collection.copy(
+                    name = name
+                )
+            }
+        }.onFailure {
+            errorChannel.send(HomeError.FailedToUpdateCollection)
+        }}
     }
 
     fun refresh() {
@@ -91,21 +136,29 @@ class HomeVM(
 
     fun undoDelete(poopLog: UiPoopLog) {
         viewModelScope.launch {
-            poopLogRepository.addPoopLog(
-                id = poopLog.id,
-                time = poopLog.time,
-                synced =  poopLog.synced,
-                uid = poopLog.uid,
-                collectionId = poopLog.collectionId
-            )
+            runCatching {
+                poopLogRepository.undoDeletePoopLog(
+                    id = poopLog.id,
+                    time = poopLog.time,
+                    uid = poopLog.uid,
+                    collectionId = poopLog.collectionId
+                )
+            }
+                .onFailure {
+                    errorChannel.send(HomeError.FailedToAdd)
+                }
         }
     }
 
-    fun deleteLog(poopLog: UiPoopLog): Boolean {
+    fun deleteLog(poopLog: UiPoopLog) {
         viewModelScope.launch {
-            poopLogRepository.deletePoopLog(poopLog.id)
+            runCatching {
+                poopLogRepository.deletePoopLog(poopLog.id)
+            }
+                .onFailure {
+                    errorChannel.send(HomeError.FailedToDelete)
+                }
         }
-        return true
     }
 }
 
@@ -145,6 +198,11 @@ data class UiCollection(
     val uid: String?,
 )
 
+sealed interface HomeError {
+    data object FailedToDelete: HomeError
+    data object FailedToAdd: HomeError
+    data object FailedToUpdateCollection: HomeError
+}
 
 @Stable
 @Immutable
