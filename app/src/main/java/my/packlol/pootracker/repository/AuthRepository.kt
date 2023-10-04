@@ -43,6 +43,10 @@ class AuthRepository(
         }
     }
 
+    suspend fun resetPassword(email: String) {
+        firebaseAuth.sendPasswordResetEmail(email).await()
+    }
+
     fun authState(): Flow<AuthState> = combine(
         userDataStore.userPrefs(),
         userDataStore.savedUsers(),

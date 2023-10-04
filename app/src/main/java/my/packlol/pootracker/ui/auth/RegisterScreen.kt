@@ -24,6 +24,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 
+const val pooEmoji = "\uD83D\uDCA9"
+
 @Composable
 fun RegisterScreen(
     register: (email: String, password: String) -> Unit,
@@ -120,7 +122,7 @@ fun RegisterScreen(
                 onClick = { register(emailState.text, passwordState.text) },
                 enabled = passwordState.text.isNotEmpty() && emailState.text.isNotEmpty()
             ) {
-                Text("create account")
+                Text("create")
             }
         }
     }

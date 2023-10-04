@@ -17,6 +17,7 @@ import my.packlol.pootracker.local.PoopDao
 import my.packlol.pootracker.local.PoopLog
 import my.packlol.pootracker.sync.FirebaseSyncManager
 import java.time.LocalDateTime
+import java.util.UUID
 
 class PoopLogRepository(
     private val poopDao: PoopDao,
@@ -25,14 +26,13 @@ class PoopLogRepository(
     private val authRepository: AuthRepository,
     private val poopApi: PoopApi
 ) {
-    private val defaultCollectionId = "9b508294-1ec6-479b-9a08-9f0afdd0baad"
 
     init {
         CoroutineScope(Dispatchers.IO).launch {
             poopDao.getAllCollections().ifEmpty {
                 poopDao.upsertCollection(
                     PoopCollection(
-                        id = defaultCollectionId,
+                        id = UUID.randomUUID().toString(),
                         name = "Default",
                         uid = null
                     )

@@ -10,7 +10,8 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import my.packlol.pootracker.local.DataStore
 import my.packlol.pootracker.repository.AuthRepository
-import my.packlol.pootracker.ui.auth.LoginEvent.*
+import my.packlol.pootracker.ui.auth.LoginEvent.Failed
+import my.packlol.pootracker.ui.auth.LoginEvent.Success
 
 class AuthVM(
     private val authRepository: AuthRepository,
@@ -52,6 +53,19 @@ class AuthVM(
                     )
                 }
             registerJob = null
+        }
+    }
+
+    fun resetPassword(email: String) {
+        viewModelScope.launch {
+            runCatching {
+                authRepository.resetPassword(email)
+            }
+                .onFailure {
+                    _loginEvent.trySend(
+                        Failed(it.localizedMessage ?: "error sending reset.")
+                    )
+                }
         }
     }
 

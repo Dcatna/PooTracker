@@ -57,7 +57,7 @@ fun rememberPoopAppState(
 @OptIn(FlowPreview::class)
 @Stable
 class PoopAppState(
-    private val windowSizeClass: WindowSizeClass,
+    val windowSizeClass: WindowSizeClass,
     networkMonitor: NetworkMonitor,
     private val userPrefs: UserPrefs,
     val authState: AuthState,
@@ -65,8 +65,6 @@ class PoopAppState(
     val navController: NavHostController,
     private val snackbarHostState: SnackbarHostState
 ) {
-    val onboarded = userPrefs.onboarded
-
     val darkTheme: Boolean
         @Composable get() = userPrefs.darkThemePreference == UserTheme.DarkTheme || (userPrefs.darkThemePreference == UserTheme.DeviceTheme && isSystemInDarkTheme())
 

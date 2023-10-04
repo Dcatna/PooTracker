@@ -53,7 +53,6 @@ class DataStore(
         return dataStore.data.map { prefs ->
             UserPrefs(
                 darkThemePreference = prefs[themeKey].toUserTheme(),
-                onboarded = prefs[onboardedKey] ?: false,
                 useOffline = prefs[useOfflineKey] ?: false,
                 useDynamicTheme = prefs[useDynamicTheme] ?: false
             )
@@ -85,13 +84,11 @@ class DataStore(
             val new = userPrefs(
                 UserPrefs(
                     darkThemePreference = mutablePrefs[themeKey].toUserTheme(),
-                    onboarded = mutablePrefs[onboardedKey] ?: false,
                     useOffline = mutablePrefs[useOfflineKey] ?: false,
                     useDynamicTheme = mutablePrefs[useDynamicTheme] ?: false
                 )
             )
             mutablePrefs.apply {
-                this[onboardedKey] = new.onboarded
                 this[themeKey] = new.darkThemePreference.ordinal
                 this[useOfflineKey] = new.useOffline
                 this[useDynamicTheme] = new.useDynamicTheme
@@ -99,7 +96,6 @@ class DataStore(
         }
         return UserPrefs(
             darkThemePreference = updated[themeKey].toUserTheme(),
-            onboarded = updated[onboardedKey] ?: false,
             useOffline = updated[useOfflineKey] ?: false,
             useDynamicTheme = updated[useDynamicTheme] ?: false
         )
@@ -140,7 +136,6 @@ class DataStore(
     companion object {
         val versionKey = stringPreferencesKey("version_key")
         val themeKey = intPreferencesKey("theme_key")
-        val onboardedKey = booleanPreferencesKey("onboarded_key")
         val useOfflineKey = booleanPreferencesKey("use_offline_key")
         val savedUsersKey = stringPreferencesKey("saved_users_key")
         val lastUidKey = stringPreferencesKey("last_uid_key")
@@ -172,7 +167,6 @@ data class SavedUser(
 
 data class UserPrefs(
     val darkThemePreference: UserTheme = UserTheme.DeviceTheme,
-    val onboarded: Boolean = false,
     val useOffline: Boolean = false,
     val useDynamicTheme: Boolean = false
 )

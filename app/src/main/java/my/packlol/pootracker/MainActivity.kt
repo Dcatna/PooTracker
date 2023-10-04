@@ -213,7 +213,7 @@ class MainActivity : ComponentActivity(), KoinComponent {
                         title = {
                             when(poopAppState.authState) {
                                 is AuthState.LoggedIn -> Text("logged in")
-                                AuthState.LoggedOut -> Text("signed out")
+                                AuthState.LoggedOut -> Unit
                                 AuthState.Offline -> Text("using offline")
                             }
                         },
