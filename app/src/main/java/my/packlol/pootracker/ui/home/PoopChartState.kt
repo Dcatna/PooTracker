@@ -108,14 +108,12 @@ class PoopChartState(
         }
     }
 
-    private val prevMonthsLength by derivedStateOf {
-        List(monthsPrev) {
-            if (it == 0) startDate.dayOfMonth
-            else startDate.month.minus(it.toLong()).length(isLeapYear(startDate.year))
-        }
+    private val prevMonthsLength = List(monthsPrev) {
+        if (it == 0) startDate.dayOfMonth
+        else startDate.month.minus(it.toLong()).length(isLeapYear(startDate.year))
     }
 
-    val totalDays by derivedStateOf {
+    val totalDays = run {
         val total = prevMonthsLength.sum()
         // do this to start monday on the top
         val remainder =  total % 7
@@ -126,15 +124,23 @@ class PoopChartState(
         return startDate.minusDays((totalDays - days).toLong()).toLocalDate()
     }
 
-    fun monthEndDateInCol(dayIdx: Int): Month? {
-        val daysRange = totalDays - (dayIdx * 7) + 1..(totalDays - (dayIdx * 7) + 7)
-        prevMonthsLength.forEachIndexed { index, _ ->
-            val sumOfPrevMonths = prevMonthsLength.take(index).sum()
-            if(sumOfPrevMonths + prevMonthsLength[index] in daysRange) {
-                return startDate.month.minus(index.toLong())
+    val monthEndDates by derivedStateOf {
+        (0..totalDays).mapNotNull { dayIdx ->
+
+            val daysRange = totalDays - (dayIdx * 7) + 1..(totalDays - (dayIdx * 7) + 7)
+
+            prevMonthsLength.mapIndexedNotNull { index, _ ->
+                val sumOfPrevMonths = prevMonthsLength.take(index).sum()
+                if (sumOfPrevMonths + prevMonthsLength[index] in daysRange) {
+                    dayIdx to startDate.month.minus(index.toLong())
+                } else null
             }
+                .firstOrNull()
         }
-        return null
+    }
+
+    val dates by derivedStateOf {
+        monthEndDates.map { it.first }
     }
 
     enum class Selection { Days, Months }

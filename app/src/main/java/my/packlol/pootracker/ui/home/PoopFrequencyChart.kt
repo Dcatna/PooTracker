@@ -134,7 +134,10 @@ fun PoopChart(
                     contentType = "MONTH_HEADER",
                     key = i
                 ) {
-                    poopChartState.monthEndDateInCol(i)?.let { month ->
+
+                    val month = remember { poopChartState.monthEndDates.find { it.first == i } }
+
+                    month?.let { (_, month) ->
 
                         val logsOnMonth by remember(poopChartState.poopLogs){
                             derivedStateOf {
@@ -142,30 +145,26 @@ fun PoopChart(
                             }
                         }
 
-                        val builder by remember(logsOnMonth) {
-                            derivedStateOf {
-                                Balloon.Builder(context).apply {
-                                    setText(
-                                        "$logsOnMonth poops on " +
-                                        month.name.lowercase().replaceFirstChar { it.uppercase() }
-                                    )
-                                    setArrowSize(10)
-                                    setWidth(BalloonSizeSpec.WRAP)
-                                    setHeight(BalloonSizeSpec.WRAP)
-                                    setArrowPositionRules(ArrowPositionRules.ALIGN_ANCHOR)
-                                    setArrowOrientation(ArrowOrientation.BOTTOM)
-                                    setArrowPosition(0.5f)
-                                    setBalloonAnimation(BalloonAnimation.FADE)
-                                    setBalloonHighlightAnimation(BalloonHighlightAnimation.SHAKE)
-                                    setPadding(8)
-                                    setMarginHorizontal(8)
-                                    setCornerRadius(8f)
-                                    setTextColor(onPrimary) // set text color with compose color.
-                                    setBackgroundColor(primaryColor) // set background color with compose color.
-                                }
+                        val builder = remember(logsOnMonth) {
+                            Balloon.Builder(context).apply {
+                                setText("$logsOnMonth poops on " + month.name.lowercase().replaceFirstChar { it.uppercase() })
+                                setArrowSize(10)
+                                setWidth(BalloonSizeSpec.WRAP)
+                                setHeight(BalloonSizeSpec.WRAP)
+                                setArrowPositionRules(ArrowPositionRules.ALIGN_ANCHOR)
+                                setArrowOrientation(ArrowOrientation.BOTTOM)
+                                setArrowPosition(0.5f)
+                                setBalloonAnimation(BalloonAnimation.FADE)
+                                setBalloonHighlightAnimation(BalloonHighlightAnimation.SHAKE)
+                                setPadding(8)
+                                setMarginHorizontal(8)
+                                setCornerRadius(8f)
+                                setTextColor(onPrimary) // set text color with compose color.
+                                setBackgroundColor(primaryColor) // set background color with compose color.
                             }
                         }
                         val selected = month in poopChartState.selectedMonths
+
                         Balloon(builder = builder, key = builder) { balloonWindow ->
                             Text(
                                 text = month.name.take(3),
@@ -178,8 +177,7 @@ fun PoopChart(
                                 textDecoration = if (selected) TextDecoration.Underline else TextDecoration.None
                             )
                         }
-                    }
-                        ?: Text("")
+                    } ?: Text("")
                 }
                 for (j in 1..7) {
 
@@ -200,9 +198,7 @@ fun PoopChart(
                                     }
                                 }
                             }
-                            val isStart = remember(poopChartState.startDate) {
-                                current == poopChartState.startDate.toLocalDate()
-                            }
+                            val isStart = current == poopChartState.startDate.toLocalDate()
 
                             if (logsOnDay == 0) {
                                 Box(
@@ -233,8 +229,7 @@ fun PoopChart(
                                     )
                                 }
                             } else {
-                                val builder by remember(logsOnDay) {
-                                    derivedStateOf {
+                                val builder = remember(logsOnDay) {
                                         Balloon.Builder(context).apply {
                                             setText(
                                                 "$logsOnDay poops on ${
@@ -259,7 +254,6 @@ fun PoopChart(
                                             setCornerRadius(8f)
                                             setTextColor(onPrimary) // set text color with compose color.
                                             setBackgroundColor(primaryColor) // set background color with compose color.
-                                        }
                                     }
                                 }
 
