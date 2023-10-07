@@ -4,6 +4,7 @@ import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuth.AuthStateListener
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.GoogleAuthProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
@@ -45,6 +46,14 @@ class AuthRepository(
 
     suspend fun resetPassword(email: String) {
         firebaseAuth.sendPasswordResetEmail(email).await()
+    }
+
+    suspend fun oneTapSignIn(token: String): AuthResult {
+        val firebaseCredential = GoogleAuthProvider.getCredential(token, null)
+        return firebaseAuth.signInWithCredential(firebaseCredential).await()
+            .also { result ->
+                updateSavedUsers(result)
+            }
     }
 
     fun authState(): Flow<AuthState> = combine(
@@ -101,5 +110,5 @@ sealed interface AuthState {
     data object Offline: AuthState
 
     val loggedIn: LoggedIn?
-        get() = this as? AuthState.LoggedIn
+        get() = this as? LoggedIn
 }

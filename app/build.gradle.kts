@@ -108,6 +108,7 @@ dependencies {
     implementation("com.google.firebase:firebase-auth-ktx")
 
     implementation("com.github.skydoves:balloon-compose:1.5.2")
+    implementation(libs.play.services.auth)
 
     //ROOM
     ksp(libs.room.compiler)

@@ -7,7 +7,6 @@ import androidx.activity.compose.setContent
 import androidx.annotation.ChecksSdkIntAtLeast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -25,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Login
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -52,11 +52,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.view.WindowCompat
@@ -70,9 +67,6 @@ import my.packlol.pootracker.ui.MainUiState
 import my.packlol.pootracker.ui.MainVM
 import my.packlol.pootracker.ui.navigation.AppNavigator
 import my.packlol.pootracker.ui.navigation.Screen
-import my.packlol.pootracker.ui.shared.PullRefreshIndicator
-import my.packlol.pootracker.ui.shared.pullRefresh
-import my.packlol.pootracker.ui.shared.rememberPullRefreshState
 import my.packlol.pootracker.ui.theme.PooTrackerTheme
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.component.KoinComponent
@@ -211,13 +205,25 @@ class MainActivity : ComponentActivity(), KoinComponent {
                             }
                         },
                         title = {
-                            when(poopAppState.authState) {
-                                is AuthState.LoggedIn -> Text("logged in")
+                            when(val auth = poopAppState.authState) {
+                                is AuthState.LoggedIn -> Text(
+                                    if(auth.user.name.isNotBlank() && auth.user.name != "null") {
+                                        "using as ${auth.user.name}"
+                                    } else {
+                                        "logged in"
+                                    }
+                                )
                                 AuthState.LoggedOut -> Unit
                                 AuthState.Offline -> Text("using offline")
                             }
                         },
                         actions = {
+                            IconButton(onClick = {  }) {
+                                Icon(
+                                    imageVector = Icons.Default.ShowChart,
+                                    contentDescription = "statistics"
+                                )
+                            }
                             IconButton(onClick = { settingsDialogVisible = !settingsDialogVisible }) {
                                 Icon(
                                     imageVector = Icons.Default.Settings,
@@ -240,41 +246,6 @@ class MainActivity : ComponentActivity(), KoinComponent {
     }
 }
 
-
-@Composable
-fun PullRefresh(
-    refreshing: Boolean,
-    onRefresh: () -> Unit,
-    indicatorOffset: Dp = 0.dp,
-    backgroundColor: Color = MaterialTheme.colorScheme.secondary,
-    contentColor: Color = MaterialTheme.colorScheme.onSecondary,
-    content: @Composable () -> Unit,
-) {
-    val state = rememberPullRefreshState(
-        refreshing = refreshing,
-        onRefresh = onRefresh,
-        refreshingOffset = indicatorOffset,
-    )
-
-
-    Box(Modifier.pullRefresh(state, !refreshing)) {
-        content()
-
-        Box(
-            Modifier
-                .matchParentSize()
-                .clipToBounds(),
-        ) {
-            PullRefreshIndicator(
-                refreshing = refreshing,
-                state = state,
-                modifier = Modifier.align(Alignment.TopCenter),
-                backgroundColor = backgroundColor,
-                contentColor = contentColor,
-            )
-        }
-    }
-}
 
 @ChecksSdkIntAtLeast(api = Build.VERSION_CODES.S)
 fun supportsDynamicTheming() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S

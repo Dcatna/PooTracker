@@ -17,6 +17,7 @@ import my.packlol.pootracker.sync.FirebaseSyncer
 import my.packlol.pootracker.ui.MainVM
 import my.packlol.pootracker.ui.auth.AuthVM
 import my.packlol.pootracker.ui.home.HomeVM
+import my.packlol.pootracker.ui.home.PoopChartVM
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModelOf
 import org.koin.androidx.workmanager.dsl.worker
@@ -63,6 +64,8 @@ val appModule = module {
     }
 
     single { Gson() }
+
+    viewModelOf(::PoopChartVM)
 
     single {
         DataStore(androidContext().dataStore, get())

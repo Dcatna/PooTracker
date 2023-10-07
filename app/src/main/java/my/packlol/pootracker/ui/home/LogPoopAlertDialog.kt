@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -22,6 +24,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.window.DialogProperties
+import my.packlol.pootracker.ui.theme.conditional
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -31,6 +34,7 @@ fun LogPoopAlertDialog(
     selectedDateTime: LocalDateTime,
     collections: List<UiCollection>,
     onDismiss: () -> Unit,
+    vertical: Boolean,
     onConfirmButtonClick: (UiCollection) -> Unit,
 ) {
     var selectedCollection by remember {
@@ -42,7 +46,9 @@ fun LogPoopAlertDialog(
     AlertDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false),
         modifier = Modifier
-            .padding(bottom = 128.dp)
+            .conditional(vertical) {
+                padding(bottom = 120.dp)
+            }
             .widthIn(max = configuration.screenWidthDp.dp - 80.dp),
         onDismissRequest = onDismiss,
         title = {
@@ -62,7 +68,7 @@ fun LogPoopAlertDialog(
             }
         },
         text = {
-            Column {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
                 Divider()
                 Text(
                     text = "Log To Collection",

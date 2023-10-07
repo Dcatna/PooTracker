@@ -33,6 +33,27 @@ class AuthVM(
         _loginEvent.trySend(Success)
     }
 
+    fun oneTapSignIn(token: String) {
+        viewModelScope.launch {
+            runCatching {
+                authRepository.oneTapSignIn(token)
+            }
+                .onSuccess { result ->
+                    _loginEvent.send(
+                        if(result.user != null)
+                            Success
+                        else
+                            Failed(error = "unable to create account")
+                    )
+                }
+                .onFailure {
+                    _loginEvent.send(
+                        Failed(it.localizedMessage ?: "unable to login")
+                    )
+                }
+        }
+    }
+
     fun register(email: String, password: String) {
         if (registerJob?.isActive == true) {
             return
