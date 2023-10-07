@@ -13,4 +13,5 @@
 .externalNativeBuild
 .cxx
 local.properties
-
+/app/src/main/java/keys/keys.kt
+/app/src/main/java/keys/*
