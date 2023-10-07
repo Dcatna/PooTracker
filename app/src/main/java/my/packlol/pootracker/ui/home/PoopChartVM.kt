@@ -10,9 +10,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import my.packlol.pootracker.local.DataStore
+import my.packlol.pootracker.local.PoopCollection
+import my.packlol.pootracker.local.PoopLog
+import my.packlol.pootracker.repository.AuthRepository
+import my.packlol.pootracker.repository.AuthState
 import my.packlol.pootracker.repository.PoopLogRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -20,26 +25,74 @@ import java.time.Month
 import javax.annotation.concurrent.Immutable
 
 class PoopChartVM(
-    poopLogRepository: PoopLogRepository
+    poopLogRepository: PoopLogRepository,
+    authRepository: AuthRepository,
+    dataStore: DataStore
 ): ViewModel() {
 
     private val monthsPrev = 12
     private val startDate = LocalDateTime.now()
 
-    private val poopLogs = poopLogRepository.observeAllPoopLogs()
-        .map { list ->
-            list.map { it.toUi() }
+    private val unselectedCollections = MutableStateFlow<List<String>>(emptyList())
+
+    val collections = combine(
+        poopLogRepository.observeAllCollections(),
+        authRepository.authState(),
+        dataStore.lastUid()
+    ) { collections, authState, lastUid ->
+        collections.filter { collection ->
+            when (authState) {
+                AuthState.LoggedOut, AuthState.Offline ->
+                    collection.uid == null || collection.uid == lastUid
+
+                is AuthState.LoggedIn ->
+                    collection.uid == authState.user.uid ||
+                            collection.uid == null || collection.uid == lastUid
+            }
         }
+            .map { collection -> collection.toUi() }
+    }
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            emptyList()
+        )
+
+    val selectedCollections = combine(
+        unselectedCollections,
+        collections
+    ) { unselected, collections ->
+        collections.filter { collection -> collection.id !in unselected }
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5_000),
+        emptyList()
+    )
+
+    private val poopLogs = combine(
+        poopLogRepository.observeAllPoopLogs(),
+        selectedCollections
+    ) { list, collections ->
+        val collectionIds = collections.map { it.id }
+        list.map { log -> log.toUi() }
+            .filter { log -> log.collectionId in collectionIds }
+    }
 
     private val mutableSelectedDates = MutableStateFlow<List<LocalDateTime>>(emptyList())
-   val selectedDates = mutableSelectedDates.asStateFlow()
+    val selectedDates = mutableSelectedDates.asStateFlow()
 
 
     private val mutableSelectedMonths = MutableStateFlow<List<Month>>(emptyList())
     val selectedMonths = mutableSelectedMonths.asStateFlow()
 
-    private val mutableSelecting = MutableStateFlow<Selection>(Selection.Days)
-    val selecting = mutableSelecting.asStateFlow()
+    val selecting = combine(selectedDates, selectedMonths) { dates, months ->
+        if (dates.isNotEmpty()) Selection.Days else Selection.Months
+    }
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            Selection.Days
+        )
 
     var reverseLayout by mutableStateOf(false)
 
@@ -47,11 +100,12 @@ class PoopChartVM(
         poopLogs,
         mutableSelectedDates,
         mutableSelectedMonths,
-        mutableSelecting
+        selecting
     ) { logs, days, months, selection ->
+        val dates = days.map { it.toLocalDate() }
         logs.filter { log ->
             when (selection) {
-                Selection.Days -> log.time in days
+                Selection.Days -> log.time.toLocalDate() in dates
                 Selection.Months -> log.time.month in months
             }
         }
@@ -149,6 +203,7 @@ class PoopChartVM(
         )
 
     fun toggleMonth(month: Month) {
+        mutableSelectedDates.update { emptyList() }
         mutableSelectedMonths.update {
             if (month in it) {
                 it - month
@@ -157,7 +212,21 @@ class PoopChartVM(
             }
         }
     }
+
+    fun toggleCollectionFilter(cid: String) {
+        viewModelScope.launch {
+            unselectedCollections.update {
+                if (cid in it) {
+                    it - cid
+                } else {
+                    it + cid
+                }
+            }
+        }
+    }
+
     fun toggleDate(date: LocalDateTime) {
+        mutableSelectedMonths.update { emptyList() }
         mutableSelectedDates.update {
             if (date in it) {
                 it - date
@@ -173,6 +242,42 @@ class PoopChartVM(
 }
 
 enum class Selection { Days, Months }
+
+fun PoopLog.toUi(): UiPoopLog {
+    return UiPoopLog(
+        id = this.id,
+        synced = this.synced,
+        uid = this.uid,
+        collectionId = this.collectionId,
+        time = this.loggedAt,
+    )
+}
+
+fun PoopCollection.toUi(): UiCollection {
+    return UiCollection(
+        name = this.name,
+        id = this.id,
+        uid = uid
+    )
+}
+
+@Stable
+@Immutable
+data class UiPoopLog(
+    val id: String,
+    val uid: String?,
+    val collectionId: String,
+    val synced: Boolean,
+    val time: LocalDateTime
+)
+
+@Stable
+@Immutable
+data class UiCollection(
+    val name: String,
+    val id: String,
+    val uid: String?,
+)
 
 @Immutable
 @Stable
@@ -190,9 +295,7 @@ sealed interface PoopChartItem {
         val amount: Int,
         val selected: Boolean,
         val start: Boolean,
-    ): PoopChartItem {
-        val dayOfMonth: String = day.dayOfMonth.toString()
-    }
+    ): PoopChartItem
     data class MonthTag(val month: Month, val amount: Int, val selected: Boolean): PoopChartItem
     data object Blank: PoopChartItem
 }

@@ -16,18 +16,20 @@ import kotlinx.coroutines.flow.firstOrNull
 import my.packlol.pootracker.firebase.FirebaseData
 import my.packlol.pootracker.firebase.PoopApi
 import my.packlol.pootracker.local.DataStore
+import my.packlol.pootracker.local.OfflineDeletedDao
 import my.packlol.pootracker.local.PoopCollection
-import my.packlol.pootracker.local.PoopDao
+import my.packlol.pootracker.local.PoopCollectionDao
 import my.packlol.pootracker.local.PoopLog
+import my.packlol.pootracker.local.PoopLogDao
 import my.packlol.pootracker.repository.AuthRepository
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.time.Duration
 
 /**
- * [CoroutineWorker] that pulls data from Firestore and updates the [PoopDao] with new data.
+ * [CoroutineWorker] that pulls data from Firestore and updates the [PoopLogDao] with new data.
  * This also deletes any data that was deleted in Firestore.
- * After syncing data with Firestore any un-synced data from [PoopDao] is pushed to the Firestore db.
+ * After syncing data with Firestore any un-synced data from [PoopLogDao] is pushed to the Firestore db.
  */
 class FirebaseSyncer(
     applicationContext: Context,
@@ -35,9 +37,11 @@ class FirebaseSyncer(
 ) : CoroutineWorker(applicationContext, workerParameters),  KoinComponent {
 
     private val TAG = "FirebaseSyncer"
-    private val poopDao by inject<PoopDao>()
+    private val poopDao by inject<PoopLogDao>()
     private val poopApi by inject<PoopApi>()
     private val dataStore by inject<DataStore>()
+    private val collectionDao by inject<PoopCollectionDao>()
+    private val offlineDeletedDao by inject<OfflineDeletedDao>()
     private val authRepository by inject<AuthRepository>()
 
     private suspend fun syncLocalWithNetwork(
@@ -88,8 +92,8 @@ class FirebaseSyncer(
             return@suspendRunCatching
         }
 
-        if (poopDao.getCollectionById(collectionId) == null) {
-            poopDao.upsertCollection(
+        if (collectionDao.getCollectionById(collectionId) == null) {
+            collectionDao.upsertCollection(
                 PoopCollection(
                     id = collectionId,
                     name = network.name,
@@ -119,7 +123,7 @@ class FirebaseSyncer(
         val localAfterSync = poopDao.getAllByCid(collectionId)
         Log.d(TAG, "local data for $collectionId after sync items: ${local.size}")
 
-        val toDelete = poopDao.getAllOfflineDeletedLogs()
+        val toDelete = offlineDeletedDao.getAllOfflineDeletedLogs()
         Log.d(TAG, "toDelete data for $collectionId ids: ${toDelete.map { it.id }}")
 
         val versionAfterSync = dataStore.version(collectionId).first()
@@ -148,7 +152,7 @@ class FirebaseSyncer(
                 }
                 toDelete.forEach { deleted ->
                     if (deleted.id !in localAfterSync.map { it.id }) {
-                        poopDao.removeFromOfflineDelete(deleted)
+                        offlineDeletedDao.removeFromOfflineDelete(deleted)
                     }
                 }
             }
@@ -161,19 +165,19 @@ class FirebaseSyncer(
 
         val uid = authRepository.currentUser?.uid ?: return Result.failure()
 
-        for (collection in poopDao.getAllOfflineDeletedCollections()) {
+        for (collection in offlineDeletedDao.getAllOfflineDeletedCollections()) {
             if (
                 collection.uid == uid &&
                 poopApi.deleteCollection(collection.collectionId, uid)
             ) {
-                poopDao.removeFromOfflineDeletedCollections(collection)
+                offlineDeletedDao.removeFromOfflineDeletedCollections(collection)
             }
         }
 
         val result = if (syncAll) {
             buildSet {
                 addAll(poopApi.getCollectionIdsForUser(uid))
-                addAll(poopDao.getAllCollectionByUid(uid).map { it.id })
+                addAll(collectionDao.getAllCollectionByUid(uid).map { it.id })
             }
                 .map { cid ->
                     syncPoopLogs(

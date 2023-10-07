@@ -11,5 +11,9 @@ import androidx.room.TypeConverters
 @TypeConverters(PoopConverters::class)
 abstract class PoopBase : RoomDatabase() {
 
-    abstract fun poopDao() : PoopDao
+    abstract fun poopLogDao() : PoopLogDao
+
+    abstract fun poopCollectionDao(): PoopCollectionDao
+
+    abstract fun offlineDeletedDao(): OfflineDeletedDao
 }

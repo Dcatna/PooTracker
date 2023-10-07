@@ -124,7 +124,7 @@ fun PoopChart(
                     PoopChartItem.Blank -> Text("")
                     is PoopChartItem.DateNoLogs -> DateNoLogsBox(
                         selected = it.selected,
-                        onClick = { },
+                        onClick = { poopChartVM.toggleDate(it.day) },
                         dayOfMonth = it.dayOfMonth,
                         start = it.start
                     )
@@ -133,13 +133,15 @@ fun PoopChart(
                         current = it.day,
                         selected = it.selected,
                         start = it.start,
-                        onClick = {}
+                        onClick = {
+                            poopChartVM.toggleDate(it.day)
+                        }
                     )
                     is PoopChartItem.MonthTag -> MonthTag(
                         logsOnMonth = it.amount,
                         month = it.month,
                         selected = it.selected,
-                        onMonthClick = {}
+                        onMonthClick = { poopChartVM.toggleMonth(it) }
                     )
                 }
             }

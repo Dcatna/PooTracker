@@ -21,6 +21,7 @@ data class PoopCollection(
     val uid: String?
 )
 
+
 @Entity
 data class OfflineDeleteLog(
     @PrimaryKey val id: String,

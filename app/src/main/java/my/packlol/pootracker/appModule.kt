@@ -72,7 +72,15 @@ val appModule = module {
     }
 
     single {
-        get<PoopBase>().poopDao()
+        get<PoopBase>().poopLogDao()
+    }
+
+    single {
+        get<PoopBase>().offlineDeletedDao()
+    }
+
+    single {
+        get<PoopBase>().poopCollectionDao()
     }
 
     single {

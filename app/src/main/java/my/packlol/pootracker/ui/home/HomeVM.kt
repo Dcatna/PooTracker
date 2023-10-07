@@ -5,18 +5,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import my.packlol.pootracker.local.DataStore
-import my.packlol.pootracker.local.PoopCollection
-import my.packlol.pootracker.local.PoopLog
-import my.packlol.pootracker.local.SavedUser
 import my.packlol.pootracker.repository.AuthRepository
 import my.packlol.pootracker.repository.PoopLogRepository
 import my.packlol.pootracker.sync.FirebaseSyncManager
@@ -27,7 +21,6 @@ class HomeVM(
     private val firebaseSyncManager: FirebaseSyncManager,
     private val poopLogRepository: PoopLogRepository,
     private val authRepository: AuthRepository,
-    userDataStore: DataStore
 ): ViewModel() {
 
     private val authState = authRepository.authState().distinctUntilChanged()
@@ -35,48 +28,12 @@ class HomeVM(
     private val errorChannel = Channel<HomeError>()
     val errors = errorChannel.receiveAsFlow()
 
-    private val unselectedCollections = MutableStateFlow<List<String>>(emptyList())
-
     val homeUiState = combine(
         firebaseSyncManager.isSyncing,
-        userDataStore.savedUsers(),
-        poopLogRepository.observeAllPoopLogs(),
-        poopLogRepository.observeAllCollections(),
-        authState,
-        unselectedCollections
-    ) { syncing, savedUsers, poopLogs, collections, authState, unselected ->
-       val putLogs = mutableSetOf<String>()
+        authState
+    ) { syncing, authState ->
        HomeUiState(
            syncing = syncing,
-           logsByUser = buildMap {
-               savedUsers.forEach { user ->
-                   put(
-                       key = user,
-                       value = poopLogs
-                          .filter { log -> log.collectionId !in unselected }
-                          .filter { log ->
-                              log.uid == user.uid &&
-                              putLogs.add(log.id) &&
-                              log.uid == authState.loggedIn?.user?.uid
-                          }
-                          .map {  log -> log.toUi() }
-                   )
-               }
-               put(
-                   SavedUser("offline", "offline"),
-                   poopLogs
-                       .filter { log -> log.collectionId !in unselected  }
-                       .filter { log -> log.uid == null && putLogs.add(log.id) }
-                       .map { log -> log.toUi() }
-               )
-           },
-           selectedCollections = collections.filter { it.id !in unselected }.map { it.toUi() },
-           collections = collections.filter {
-               it.uid == authState.loggedIn?.user?.uid || it.uid == null
-           }
-               .map {
-                   it.toUi()
-               }
        )
     }
         .stateIn(
@@ -89,18 +46,6 @@ class HomeVM(
         viewModelScope.launch {
             runCatching {
                 poopLogRepository.addCollection(name, offline)
-            }
-        }
-    }
-
-    fun toggleCollectionFilter(cid: String) {
-        viewModelScope.launch {
-            unselectedCollections.update {
-                if (cid in it) {
-                    it - cid
-                } else {
-                    it + cid
-                }
             }
         }
     }
@@ -208,42 +153,6 @@ fun <T1, T2, T3, T4, T5, T6, R> combine(
     )
 }
 
-fun PoopLog.toUi(): UiPoopLog {
-    return UiPoopLog(
-        id = this.id,
-        synced = this.synced,
-        uid = this.uid,
-        collectionId = this.collectionId,
-        time = this.loggedAt,
-    )
-}
-
-fun PoopCollection.toUi(): UiCollection {
-    return UiCollection(
-        name = this.name,
-        id = this.id,
-        uid = uid
-    )
-}
-
-@Stable
-@Immutable
-data class UiPoopLog(
-    val id: String,
-    val uid: String?,
-    val collectionId: String,
-    val synced: Boolean,
-    val time: LocalDateTime
-)
-
-@Stable
-@Immutable
-data class UiCollection(
-    val name: String,
-    val id: String,
-    val uid: String?,
-)
-
 sealed interface HomeError {
     data object FailedToDelete: HomeError
     data object FailedToAdd: HomeError
@@ -254,10 +163,4 @@ sealed interface HomeError {
 @Immutable
 data class HomeUiState(
     val syncing: Boolean = true,
-    val logsByUser: Map<SavedUser, List<UiPoopLog>> = emptyMap(),
-    val collections: List<UiCollection> = emptyList(),
-    val selectedCollections: List<UiCollection> = emptyList(),
-) {
-
-    val logs: List<UiPoopLog> = logsByUser.values.flatten()
-}
+)

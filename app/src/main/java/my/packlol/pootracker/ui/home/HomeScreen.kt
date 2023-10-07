@@ -121,9 +121,6 @@ fun HomeScreen(
         refresh = {
             homeVM.refresh()
         },
-        onCollectionFilterClick = { cid ->
-            homeVM.toggleCollectionFilter(cid)
-        },
         onCollectionEdit = { cid, name ->
             homeVM.editCollection(name, cid)
         },
@@ -148,7 +145,6 @@ private fun HomeScreen(
     onCollectionAdd: (name: String, offline: Boolean) -> Unit,
     onCollectionDelete: (cid: String) -> Unit,
     onCollectionEdit: (cid: String, name: String) -> Unit,
-    onCollectionFilterClick: (cid: String) -> Unit,
     poopChartVM: PoopChartVM = koinViewModel()
 ) {
 
@@ -207,6 +203,9 @@ private fun HomeScreen(
             mutableStateOf(false)
         }
 
+        val collections by poopChartVM.collections.collectAsState()
+        val selectedCollections by poopChartVM.selectedCollections.collectAsState()
+
         FilterBottomSheet(
             visible = filterBottomSheetVisible,
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -226,7 +225,7 @@ private fun HomeScreen(
         selectedDateTime?.let {
             LogPoopAlertDialog(
                 selectedDateTime = it,
-                collections = state.collections,
+                collections = collections,
                 onDismiss = { selectedDateTime = null },
                 onConfirmButtonClick = { collection ->
                     logPoop(it, collection)
@@ -239,7 +238,7 @@ private fun HomeScreen(
         EditCollectionsDialog(
             visible = editCollectionsDialogVisible,
             onDismiss = { editCollectionsDialogVisible = false },
-            collections = state.collections,
+            collections = collections,
             onCollectionAdd = onCollectionAdd,
             onCollectionDelete = onCollectionDelete,
             onCollectionEdit = onCollectionEdit,
@@ -263,10 +262,10 @@ private fun HomeScreen(
                         .weight(1f)
                 ) {
                     CollectionsLazyRow(
-                        collections = state.collections,
-                        selected = state.selectedCollections,
+                        collections = collections,
+                        selected = selectedCollections,
                         onCollectionClick = {
-                            onCollectionFilterClick(it)
+                            poopChartVM.toggleCollectionFilter(it)
                         }
                     )
                     AnimatedVisibility(
@@ -329,10 +328,10 @@ private fun HomeScreen(
                     expanded = expanded
                 )
                 CollectionsLazyRow(
-                    collections = state.collections,
-                    selected = state.selectedCollections,
+                    collections = collections,
+                    selected = selectedCollections,
                     onCollectionClick = {
-                        onCollectionFilterClick(it)
+                        poopChartVM.toggleCollectionFilter(it)
                     }
                 )
                 LogPoopContentWithLogs(
