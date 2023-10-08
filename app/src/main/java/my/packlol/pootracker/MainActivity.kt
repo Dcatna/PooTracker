@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.annotation.ChecksSdkIntAtLeast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -43,7 +44,6 @@ import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSiz
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,8 +55,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
@@ -65,6 +67,7 @@ import my.packlol.pootracker.local.UserTheme
 import my.packlol.pootracker.repository.AuthState
 import my.packlol.pootracker.ui.MainUiState
 import my.packlol.pootracker.ui.MainVM
+import my.packlol.pootracker.ui.auth.pooEmoji
 import my.packlol.pootracker.ui.navigation.AppNavigator
 import my.packlol.pootracker.ui.navigation.Screen
 import my.packlol.pootracker.ui.theme.PooTrackerTheme
@@ -85,8 +88,12 @@ class MainActivity : ComponentActivity(), KoinComponent {
 
             WindowCompat.setDecorFitsSystemWindows(window, false)
 
-            when (val mainUiState = mainVM.mainUiState.collectAsState().value) {
-                MainUiState.Loading -> {}
+            when (val mainUiState = mainVM.mainUiState.collectAsStateWithLifecycle().value) {
+                MainUiState.Loading -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(pooEmoji, fontSize = 68.sp)
+                    }
+                }
                 is MainUiState.Success -> {
                     PoopApp(
                         state = mainUiState,
@@ -139,7 +146,7 @@ class MainActivity : ComponentActivity(), KoinComponent {
             snackbarHostState = snackbarHostState
         )
 
-        val connected by poopAppState.connected.collectAsState()
+        val connected by poopAppState.connected.collectAsStateWithLifecycle()
 
         LaunchedEffect(Unit) {
             var prevConnected = true
@@ -270,7 +277,9 @@ fun SettingsDialog(
      */
     AlertDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false),
-        modifier = Modifier.padding(bottom = 32.dp).widthIn(max = configuration.screenWidthDp.dp - 80.dp),
+        modifier = Modifier
+            .padding(bottom = 32.dp)
+            .widthIn(max = configuration.screenWidthDp.dp - 80.dp),
         onDismissRequest = { onDismiss() },
         title = {
             Text(

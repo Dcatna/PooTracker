@@ -43,7 +43,6 @@ import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,10 +57,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.maxkeppeker.sheets.core.models.base.rememberUseCaseState
 import com.maxkeppeler.sheets.date_time.DateTimeDialog
 import com.maxkeppeler.sheets.date_time.models.DateTimeConfig
 import com.maxkeppeler.sheets.date_time.models.DateTimeSelection
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import my.packlol.pootracker.PoopAppState
 import my.packlol.pootracker.repository.AuthState
@@ -69,6 +70,7 @@ import my.packlol.pootracker.ui.LocalDateTimeSaver
 import my.packlol.pootracker.ui.PullRefresh
 import my.packlol.pootracker.ui.auth.pooEmoji
 import my.packlol.pootracker.ui.home.Selection.*
+import my.packlol.pootracker.ui.shared.BannerAd
 import my.packlol.pootracker.ui.theme.conditional
 import my.packlol.pootracker.ui.theme.drawEndDivider
 import org.koin.androidx.compose.koinViewModel
@@ -82,7 +84,7 @@ fun HomeScreen(
 ) {
     val homeVM = koinViewModel<HomeVM>()
 
-    val state by homeVM.homeUiState.collectAsState()
+    val state by homeVM.homeUiState.collectAsStateWithLifecycle()
 
     val scope = rememberCoroutineScope()
 
@@ -205,8 +207,8 @@ private fun HomeScreen(
             mutableStateOf(false)
         }
 
-        val collections by poopChartVM.collections.collectAsState()
-        val selectedCollections by poopChartVM.selectedCollections.collectAsState()
+        val collections by poopChartVM.collections.collectAsStateWithLifecycle()
+        val selectedCollections by poopChartVM.selectedCollections.collectAsStateWithLifecycle()
 
         FilterBottomSheet(
             visible = filterBottomSheetVisible,
@@ -251,10 +253,10 @@ private fun HomeScreen(
             mutableStateOf(true)
         }
 
-        val selecting by poopChartVM.selecting.collectAsState()
-        val selectedMonths by poopChartVM.selectedMonths.collectAsState()
-        val selectedDates by poopChartVM.selectedDates.collectAsState()
-        val filteredLogs by poopChartVM.filteredLogs.collectAsState()
+        val selecting by poopChartVM.selecting.collectAsStateWithLifecycle()
+        val selectedMonths by poopChartVM.selectedMonths.collectAsStateWithLifecycle()
+        val selectedDates by poopChartVM.selectedDates.collectAsStateWithLifecycle()
+        val filteredLogs by poopChartVM.filteredLogs.collectAsStateWithLifecycle()
 
         if (useSideBySide) {
             Row {
@@ -310,6 +312,7 @@ private fun HomeScreen(
             Column(
                 Modifier.fillMaxSize()
             ) {
+                BannerAd()
                 Column {
                     AnimatedVisibility(
                         visible = expanded,
@@ -376,6 +379,14 @@ fun CollectionsLazyRow(
             var toggleState by remember(collections, selected) {
                 mutableStateOf(ToggleableState(collection in selected))
             }
+
+            LaunchedEffect(key1 = toggleState) {
+                if (toggleState == ToggleableState.Indeterminate) {
+                    delay(2000)
+                    toggleState = ToggleableState(collection in selected)
+                }
+            }
+
             TriStateFilterChip(
                 state = toggleState,
                 toggleState = {

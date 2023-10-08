@@ -1,32 +1,33 @@
 [versions]
-activityCompose = "1.7.2"
+activityCompose = "1.8.0"
 androidGradlePlugin = "8.1.1"
 coreKtx = "1.12.0"
 espressoCore = "3.5.1"
 junitVersion = "1.1.5"
 junit = "4.13.2"
-kotlin = "1.9.0"
+kotlin = "1.9.10"
 lifecycleRuntimeKtx = "2.6.2"
-materialIconsExtended = "1.5.1"
-navigationCompose = "2.7.2"
+materialIconsExtended = "1.5.3"
+navigationCompose = "2.7.4"
 retrofit = "2.9.0"
 gson = "2.10.1"
 roomVersion = "2.5.2"
-ksp = "1.9.0-1.0.13"
+ksp = "1.9.10-1.0.13"
 pagingVersion = "3.2.1"
 pagingComposeVersion = "3.2.1"
 coil = "2.4.0"
-koinVersion="3.4.3"
-koinCompose="3.3.0"
+koinVersion="3.5.0"
+koinCompose="3.5.0"
 prefsDatastoreVersion = "1.0.0"
-workRuntimeKtx = "2.9.0-alpha01"
-material3WindowSizeClass = "1.1.1"
+workRuntimeKtx = "2.9.0-beta01"
+material3WindowSizeClass = "1.1.2"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
 androidx-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espressoCore" }
 androidx-junit = { module = "androidx.test.ext:junit", version.ref = "junitVersion" }
+androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycleRuntimeKtx" }
 androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleRuntimeKtx" }
 androidx-lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycleRuntimeKtx" }

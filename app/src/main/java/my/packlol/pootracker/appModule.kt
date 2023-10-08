@@ -2,6 +2,7 @@ package my.packlol.pootracker
 
 import androidx.room.Room
 import com.google.firebase.FirebaseApp
+import com.google.firebase.analytics.ktx.analytics
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -18,6 +19,7 @@ import my.packlol.pootracker.ui.MainVM
 import my.packlol.pootracker.ui.auth.AuthVM
 import my.packlol.pootracker.ui.home.HomeVM
 import my.packlol.pootracker.ui.home.PoopChartVM
+import my.packlol.pootracker.ui.stats.StatsVM
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModelOf
 import org.koin.androidx.workmanager.dsl.worker
@@ -35,12 +37,18 @@ val appModule = module {
 
     viewModelOf(::HomeVM)
 
+    viewModelOf(::StatsVM)
+
     single {
         PoopApi(get())
     }
 
     single {
         Firebase.auth(get<FirebaseApp>())
+    }
+
+    single {
+        Firebase.analytics
     }
 
     single {
@@ -54,6 +62,7 @@ val appModule = module {
     singleOf(::PoopLogRepository)
 
     single { NetworkMonitor(androidContext()) }
+
 
     single {
         FirebaseSyncManager(androidContext())

@@ -24,7 +24,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -36,6 +35,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.skydoves.balloon.ArrowOrientation
 import com.skydoves.balloon.ArrowPositionRules
 import com.skydoves.balloon.Balloon
@@ -95,7 +95,7 @@ fun PoopChart(
             }
         }
 
-        val poopChartItems by poopChartVM.poopChartItems.collectAsState()
+        val poopChartItems by poopChartVM.poopChartItems.collectAsStateWithLifecycle()
 
         val width by animateDpAsState(
             label = "days-anim",

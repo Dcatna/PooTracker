@@ -1,7 +1,7 @@
 package my.packlol.pootracker
 
 import android.app.Application
-import com.google.firebase.FirebaseApp
+import com.google.android.gms.ads.MobileAds
 import my.packlol.pootracker.sync.SyncStarter
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
@@ -19,6 +19,8 @@ class App : Application() {
             workManagerFactory()
             modules(appModule)
         }
+
+        MobileAds.initialize(this)
 
         SyncStarter.start(this)
     }

@@ -1,8 +1,10 @@
 package my.packlol.pootracker.repository
 
 import android.util.Log
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import my.packlol.pootracker.firebase.PoopApi
 import my.packlol.pootracker.local.DataStore
@@ -26,6 +28,20 @@ class PoopLogRepository(
     private val poopApi: PoopApi,
     private val dataStore: DataStore,
 ) {
+    init {
+        CoroutineScope(Dispatchers.IO).launch {
+            if(collectionDao.getAllCollections().isEmpty()) {
+                collectionDao.addCollection(
+                    PoopCollection(
+                        id = UUID.randomUUID().toString(),
+                        name = "Default",
+                        uid = null
+                    )
+                )
+            }
+        }
+    }
+
     suspend fun deletePoopLog(id: String) = withContext(Dispatchers.IO) {
         val toDelete = poopDao.getById(id) ?: return@withContext false
 

@@ -42,7 +42,7 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.2"
+        kotlinCompilerExtensionVersion = "1.5.3"
     }
     packaging {
         resources {
@@ -59,11 +59,13 @@ dependencies {
 
     implementation(libs.androidx.navigation.compose)
 
-    implementation(platform("androidx.compose:compose-bom:2023.03.00"))
+    implementation(platform("androidx.compose:compose-bom:2023.10.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
+
+    implementation(libs.androidx.lifecycle.runtime.compose)
 
     implementation(libs.androidx.material.icons.extended)
 
@@ -106,6 +108,8 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:32.3.1"))
     implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-analytics-ktx")
+    implementation("com.google.android.gms:play-services-ads:22.4.0")
 
     implementation("com.github.skydoves:balloon-compose:1.5.2")
     implementation(libs.play.services.auth)
