@@ -5,6 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 import my.packlol.pootracker.firebase.PoopApi
+import my.packlol.pootracker.local.DataStore
 import my.packlol.pootracker.local.OfflineDeleteLog
 import my.packlol.pootracker.local.OfflineDeletedCollection
 import my.packlol.pootracker.local.OfflineDeletedDao
@@ -14,6 +15,7 @@ import my.packlol.pootracker.local.PoopLog
 import my.packlol.pootracker.local.PoopLogDao
 import my.packlol.pootracker.sync.FirebaseSyncManager
 import java.time.LocalDateTime
+import java.util.UUID
 
 class PoopLogRepository(
     private val poopDao: PoopLogDao,
@@ -21,7 +23,8 @@ class PoopLogRepository(
     private val offlineDeletedDao: OfflineDeletedDao,
     private val poopSyncManager: FirebaseSyncManager,
     private val authRepository: AuthRepository,
-    private val poopApi: PoopApi
+    private val poopApi: PoopApi,
+    private val dataStore: DataStore,
 ) {
     suspend fun deletePoopLog(id: String) = withContext(Dispatchers.IO) {
         val toDelete = poopDao.getById(id) ?: return@withContext false
@@ -82,7 +85,7 @@ class PoopLogRepository(
             poopDao.upsert(
                 PoopLog(
                     uid = null,
-                    collectionId = collectionId,
+                    collectionId = collection.id,
                     synced = false,
                     loggedAt = time
                 )
@@ -91,12 +94,13 @@ class PoopLogRepository(
             poopDao.upsert(
                 PoopLog(
                     uid = collection.uid,
-                    collectionId = collectionId,
+                    collectionId = collection.id,
                     synced = false,
                     loggedAt = time
                 )
             )
-            poopSyncManager.requestSync(collectionId)
+            Log.d("PoopLog", "going to sync ${collection.id}")
+            poopSyncManager.requestSync(collection.id)
         }
     }
 
@@ -109,14 +113,17 @@ class PoopLogRepository(
         offline: Boolean
     ) = withContext(Dispatchers.IO) {
 
-        collectionDao.addCollection(
-            PoopCollection(
-                name = name,
-                uid = if (offline) null
-                else authRepository.currentUser?.uid
-            )
+        val collection = PoopCollection(
+            name = name,
+            uid = if (offline) null else authRepository.currentUser?.uid,
+            id = UUID.randomUUID().toString()
         )
-        poopApi
+
+        collectionDao.addCollection(collection)
+
+        if (collection.uid != null) {
+            dataStore.updateVersion(collection.id, 1)
+        }
     }
 
     suspend fun deleteCollection(

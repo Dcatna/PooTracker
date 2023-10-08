@@ -1,5 +1,6 @@
 package my.packlol.pootracker.ui.home
 
+import android.util.Log
 import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -54,6 +55,7 @@ class HomeVM(
         time: LocalDateTime,
         collectionId: String,
     ) {
+        Log.d("LogPoop", "cid: $collectionId")
         viewModelScope.launch {
             runCatching {
                 poopLogRepository.updatePoopLog(

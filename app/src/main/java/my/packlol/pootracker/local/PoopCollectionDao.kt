@@ -14,7 +14,7 @@ interface PoopCollectionDao {
     suspend fun addCollection(poopCollection: PoopCollection)
 
     @Query("SELECT * FROM PoopCollection WHERE uid = :uid")
-    suspend fun getAllCollectionByUid(uid: String?): List<PoopCollection>
+    suspend fun getAllCollectionByUid(uid: String): List<PoopCollection>
 
     @Query("SELECT * FROM PoopCollection WHERE id = :cid")
     suspend fun getCollectionById(cid: String): PoopCollection?

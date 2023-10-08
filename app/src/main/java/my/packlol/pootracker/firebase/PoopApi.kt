@@ -38,6 +38,8 @@ class PoopApi(
                         snapshot.documents.forEach { document ->
                             add(document.id)
                         }
+                    }.also {
+                        Log.d("FirebaseApi", "found collections $it")
                     }
                 )
             }
@@ -92,23 +94,6 @@ class PoopApi(
                .documents
                .find { it.id == collectionId }
                ?.toObject<FirebaseData>()
-               ?: run {
-                   db.collection(
-                       "${FBConstants.UserId}/$uid/${FBConstants.PoopListCollection}"
-                   )
-                       .document()
-                       .set(
-                           FirebaseData(
-                               version = -1,
-                               deleted = false,
-                               logs = emptyList()
-                           )
-                       )
-                   FirebaseData(
-                       version = -1,
-                       deleted = false,
-                       logs = emptyList()
-                   )
-               }
+               ?: error("cant get collection")
     }
 }

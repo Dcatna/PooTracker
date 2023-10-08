@@ -55,6 +55,14 @@ class FirebaseSyncer(
         if (network.version > localVersion) {
             // Network version is higher
             // delete any ids synced and not saved to network anymore
+            collectionDao.upsertCollection(
+                PoopCollection(
+                    id = collectionId,
+                    name = network.name,
+                    uid = uid
+                )
+            )
+
             local
                 .filter { it.synced }
                 .map { it.id }
@@ -82,8 +90,24 @@ class FirebaseSyncer(
 
     private suspend fun syncPoopLogs(uid: String, collectionId: String) = suspendRunCatching {
 
-        val network = poopApi.getPoopList(uid, collectionId)
-        Log.d(TAG, "firebase data for uid $uid cid $collectionId items: ${network.logs.size}")
+        var networkList = runCatching {
+            poopApi.getPoopList(uid, collectionId)
+        }
+            .getOrNull()
+        Log.d(TAG, "firebase data for uid $uid cid $collectionId items: ${networkList?.logs?.size}")
+
+        if (networkList == null) {
+            val c = collectionDao.getCollectionById(collectionId) ?: error("no collection network or local")
+            poopApi.updatePoopList(
+                uid, collectionId, FirebaseData(-99, false, emptyList(), c.name)
+            ).let {
+                if (it) {
+                    networkList = FirebaseData(-99, false, emptyList(), c.name)
+                }
+            }
+        }
+
+        val network = networkList!!
 
         if (network.deleted) {
             for (poopLog in poopDao.getAllByCid(collectionId)) {
@@ -141,7 +165,8 @@ class FirebaseSyncer(
                     version = dataStore.updateVersion(collectionId, versionAfterSync + 1)
                         .also { Log.d(TAG, "updated network cid $collectionId, version $version") },
                     logs = localAfterSync.map { it.toFirebaseLog() },
-                    deleted = false
+                    deleted = false,
+                    name = collectionDao.getCollectionById(collectionId)!!.name
                 )
             )
             if (updated) {
@@ -175,9 +200,10 @@ class FirebaseSyncer(
         }
 
         val result = if (syncAll) {
+            Log.d(TAG, "=========== Syncing all ===========")
             buildSet {
                 addAll(poopApi.getCollectionIdsForUser(uid))
-                addAll(collectionDao.getAllCollectionByUid(uid).map { it.id })
+                addAll(collectionDao.getAllCollections().filter { it.uid == uid }.map { it.id })
             }
                 .map { cid ->
                     syncPoopLogs(
