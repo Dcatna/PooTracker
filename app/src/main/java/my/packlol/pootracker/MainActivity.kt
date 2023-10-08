@@ -25,7 +25,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Login
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -202,8 +201,9 @@ class MainActivity : ComponentActivity(), KoinComponent {
                                     )
                                 }
                                 AuthState.LoggedOut -> Text("signed out")
-                                AuthState.Offline -> IconButton(onClick = { poopAppState.navController.navigate(
-                                    Screen.Auth.route) }) {
+                                AuthState.Offline -> IconButton(
+                                    onClick = { poopAppState.navController.navigate(Screen.Auth.route) }
+                                ) {
                                     Icon(
                                         imageVector = Icons.Default.Login,
                                         contentDescription = "login"
@@ -225,12 +225,12 @@ class MainActivity : ComponentActivity(), KoinComponent {
                             }
                         },
                         actions = {
-                            IconButton(onClick = {  }) {
-                                Icon(
-                                    imageVector = Icons.Default.ShowChart,
-                                    contentDescription = "statistics"
-                                )
-                            }
+//                            IconButton(onClick = {  }) {
+//                                Icon(
+//                                    imageVector = Icons.Default.ShowChart,
+//                                    contentDescription = "statistics"
+//                                )
+//                            }
                             IconButton(onClick = { settingsDialogVisible = !settingsDialogVisible }) {
                                 Icon(
                                     imageVector = Icons.Default.Settings,

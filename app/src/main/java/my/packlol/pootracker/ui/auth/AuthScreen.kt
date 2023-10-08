@@ -204,6 +204,11 @@ fun LoginScreen(
             }) {
                 Text(text = "Reset password")
             }
+            Button(onClick = {
+                oneTapSignInState.open()
+            }) {
+                Text(text = "Google sign in")
+            }
         }
     }
 }

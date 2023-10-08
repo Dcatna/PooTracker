@@ -10,7 +10,7 @@ import com.google.android.gms.ads.AdView
 @Composable
 fun BannerAd(
     modifier: Modifier = Modifier,
-    test: Boolean = true
+    test: Boolean = false
 ) {
     AndroidView(
         modifier = modifier,
