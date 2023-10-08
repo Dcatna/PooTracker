@@ -14,10 +14,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -29,7 +31,6 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -54,6 +55,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import com.maxkeppeker.sheets.core.models.base.rememberUseCaseState
@@ -361,7 +363,6 @@ private fun HomeScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CollectionsLazyRow(
     collections: List<UiCollection>,
@@ -372,11 +373,29 @@ fun CollectionsLazyRow(
         Modifier.padding(start = 8.dp)
     ) {
         items(collections) { collection ->
-            FilterChip(
-                selected = collection in selected,
-                onClick = { onCollectionClick(collection.id) },
-                label = { Text(text = collection.name) }
+            var toggleState by remember(collections, selected) {
+                mutableStateOf(ToggleableState(collection in selected))
+            }
+            TriStateFilterChip(
+                state = toggleState,
+                toggleState = {
+                    when (it) {
+                        ToggleableState.On -> {
+                            toggleState = it
+                            onCollectionClick(collection.id)
+                        }
+                        ToggleableState.Off -> {
+                            toggleState = it
+                            onCollectionClick(collection.id)
+                        }
+                        ToggleableState.Indeterminate -> {
+                            toggleState = it
+                        }
+                    }
+                },
+                name = collection.name
             )
+            Spacer(modifier = Modifier.width(4.dp))
         }
     }
 }

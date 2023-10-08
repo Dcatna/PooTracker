@@ -71,6 +71,21 @@ fun LoginScreen(
 
     val oneTapSignInState = rememberOneTapSignInState()
 
+    LaunchedEffect(Unit) {
+        oneTapSignInState.open()
+    }
+
+    OneTapSignInWithGoogle(
+        state = oneTapSignInState,
+        clientId = webClientId,
+        onTokenIdReceived = {
+            authVM.oneTapSignIn(it)
+        },
+        onDialogDismissed = {
+            oneTapSignInState.close()
+        }
+    )
+
     var authScreen by remember { mutableStateOf(Login) }
 
     Column {
@@ -101,22 +116,6 @@ fun LoginScreen(
         var email by rememberSaveable {
             mutableStateOf("")
         }
-
-        LaunchedEffect(key1 = Unit) {
-            oneTapSignInState.open()
-        }
-
-        OneTapSignInWithGoogle(
-            state = oneTapSignInState,
-            clientId = webClientId,
-            onTokenIdReceived = {
-                authVM.oneTapSignIn(it)
-            },
-            onDialogDismissed = {
-                oneTapSignInState.close()
-                poopAppState.showSnackbar(it)
-            }
-        )
 
         if (resetDialogVisible) {
             AlertDialog(
@@ -311,41 +310,43 @@ private fun signIn(
     launchActivityResult: (IntentSenderRequest) -> Unit,
     onError: (String) -> Unit
 ) {
-    val oneTapClient = Identity.getSignInClient(activity)
-    val signInRequest = BeginSignInRequest.builder()
-        .setGoogleIdTokenRequestOptions(
-            BeginSignInRequest.GoogleIdTokenRequestOptions.builder()
-                .setSupported(true)
-                .setNonce(nonce)
-                .setServerClientId(clientId)
-                .setFilterByAuthorizedAccounts(true)
-                .build()
-        )
-        .setAutoSelectEnabled(true)
-        .build()
-
-    oneTapClient.beginSignIn(signInRequest)
-        .addOnSuccessListener { result ->
-            try {
-                launchActivityResult(
-                    IntentSenderRequest.Builder(
-                        result.pendingIntent.intentSender
-                    ).build()
-                )
-            } catch (e: Exception) {
-                onError(e.message.toString())
-            }
-        }
-        .addOnFailureListener {
-            signUp(
-                activity = activity,
-                clientId = clientId,
-                nonce = nonce,
-                launchActivityResult = launchActivityResult,
-                onError = onError
+    runCatching {
+        val oneTapClient = Identity.getSignInClient(activity)
+        val signInRequest = BeginSignInRequest.builder()
+            .setGoogleIdTokenRequestOptions(
+                BeginSignInRequest.GoogleIdTokenRequestOptions.builder()
+                    .setSupported(true)
+                    .setNonce(nonce)
+                    .setServerClientId(clientId)
+                    .setFilterByAuthorizedAccounts(true)
+                    .build()
             )
-            Log.e("Auth", "${it.message} sign in")
-        }
+            .setAutoSelectEnabled(true)
+            .build()
+        oneTapClient.beginSignIn(signInRequest)
+            .addOnSuccessListener { result ->
+                try {
+                    launchActivityResult(
+                        IntentSenderRequest.Builder(
+                            result.pendingIntent.intentSender
+                        ).build()
+                    )
+                } catch (e: Exception) {
+                    onError(e.message.toString())
+                }
+            }
+            .addOnFailureListener {
+                signUp(
+                    activity = activity,
+                    clientId = clientId,
+                    nonce = nonce,
+                    launchActivityResult = launchActivityResult,
+                    onError = onError
+                )
+                Log.e("Auth", "${it.message} sign in")
+            }
+    }
+        .onFailure { onError("") }
 }
 
 private fun signUp(
@@ -355,33 +356,35 @@ private fun signUp(
     launchActivityResult: (IntentSenderRequest) -> Unit,
     onError: (String) -> Unit
 ) {
-    val oneTapClient = Identity.getSignInClient(activity)
-    val signInRequest = BeginSignInRequest.builder()
-        .setGoogleIdTokenRequestOptions(
-            BeginSignInRequest.GoogleIdTokenRequestOptions.builder()
-                .setSupported(true)
-                .setNonce(nonce)
-                .setServerClientId(clientId)
-                .setFilterByAuthorizedAccounts(false)
-                .build()
-        )
-        .build()
+    runCatching {
+        val oneTapClient = Identity.getSignInClient(activity)
+        val signInRequest = BeginSignInRequest.builder()
+            .setGoogleIdTokenRequestOptions(
+                BeginSignInRequest.GoogleIdTokenRequestOptions.builder()
+                    .setSupported(true)
+                    .setNonce(nonce)
+                    .setServerClientId(clientId)
+                    .setFilterByAuthorizedAccounts(false)
+                    .build()
+            )
+            .build()
 
-    oneTapClient.beginSignIn(signInRequest)
-        .addOnSuccessListener { result ->
-            try {
-                launchActivityResult(
-                    IntentSenderRequest.Builder(
-                        result.pendingIntent.intentSender
-                    ).build()
-                )
-            } catch (e: Exception) {
-                onError(e.message.toString())
-                Log.e("Auth", "${e.message}")
+        oneTapClient.beginSignIn(signInRequest)
+            .addOnSuccessListener { result ->
+                try {
+                    launchActivityResult(
+                        IntentSenderRequest.Builder(
+                            result.pendingIntent.intentSender
+                        ).build()
+                    )
+                } catch (e: Exception) {
+                    onError(e.message.toString())
+                    Log.e("Auth", "${e.message}")
+                }
             }
-        }
-        .addOnFailureListener {
-            onError("Google Account not Found.")
-            Log.e("Auth", "sign up ${it.message}")
-        }
+            .addOnFailureListener {
+                onError("Google Account not Found.")
+                Log.e("Auth", "sign up ${it.message}")
+            }
+    }
 }
