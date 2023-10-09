@@ -133,9 +133,20 @@ class DataStore(
         }[lastUidKey]
     }
 
+    fun notifID(): Flow<Int> {
+        return dataStore.data.map { prefs -> prefs[notifIdKey] ?: 0 }
+    }
+
+    suspend fun updateNotifId(id: Int) {
+        dataStore.edit { mutablePreferences ->
+            mutablePreferences[notifIdKey] = id
+        }
+    }
+
     companion object {
         val versionKey = stringPreferencesKey("version_key")
         val themeKey = intPreferencesKey("theme_key")
+        val notifIdKey = intPreferencesKey("notif_id_key")
         val useOfflineKey = booleanPreferencesKey("use_offline_key")
         val savedUsersKey = stringPreferencesKey("saved_users_key")
         val lastUidKey = stringPreferencesKey("last_uid_key")

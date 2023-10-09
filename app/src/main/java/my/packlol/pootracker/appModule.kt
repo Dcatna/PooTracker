@@ -11,6 +11,7 @@ import my.packlol.pootracker.firebase.PoopApi
 import my.packlol.pootracker.local.DataStore
 import my.packlol.pootracker.local.PoopBase
 import my.packlol.pootracker.local.dataStore
+import my.packlol.pootracker.notification.PoopPredictionNotifier
 import my.packlol.pootracker.repository.AuthRepository
 import my.packlol.pootracker.repository.PoopLogRepository
 import my.packlol.pootracker.sync.FirebaseSyncManager
@@ -43,34 +44,23 @@ val appModule = module {
         PoopApi(get())
     }
 
-    single {
-        Firebase.auth(get<FirebaseApp>())
-    }
+    single { Firebase.auth(get<FirebaseApp>()) }
 
-    single {
-        Firebase.analytics
-    }
+    single { Firebase.analytics }
 
-    single {
-        Firebase.firestore(get<FirebaseApp>())
-    }
+    single { Firebase.firestore(get<FirebaseApp>()) }
 
-    single {
-        FirebaseApp.initializeApp(androidContext())
-    }
+    single { FirebaseApp.initializeApp(androidContext()) }
 
     singleOf(::PoopLogRepository)
 
     single { NetworkMonitor(androidContext()) }
 
+    single { FirebaseSyncManager(androidContext()) }
 
-    single {
-        FirebaseSyncManager(androidContext())
-    }
+    worker { FirebaseSyncer(get(), get()) }
 
-    worker {
-        FirebaseSyncer(get(), get())
-    }
+    worker { PoopPredictionNotifier(get(), get()) }
 
     single { Gson() }
 
