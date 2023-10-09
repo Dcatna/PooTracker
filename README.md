@@ -12,7 +12,6 @@ and will be synced on app startup.
 - [Firebase](https://firebase.google.com/)
 
 - ## App images
-<img src="https://github.com/Dcatna/PooTracker/assets/98186105/e0985c0b-6961-401d-bcaf-5e816eec7016" width=300>
-<img src="https://github.com/Dcatna/PooTracker/assets/98186105/0a0b319c-f3ae-494c-b119-19adb46910d3" width=300>
-<img src="https://github.com/Dcatna/PooTracker/assets/98186105/59a3b19f-c3ef-4ed5-9fc6-51fb3fdad6c8" width=300>
-<img src="https://github.com/Dcatna/PooTracker/assets/98186105/14288d61-3103-472c-8c0a-9b6d862d7743" width=300>
+<img src="https://github.com/Dcatna/PooTracker/assets/98186105/c3107485-8398-4477-8579-d56eba03ec6e" width=300>
+<img src="https://github.com/Dcatna/PooTracker/assets/98186105/47209fad-6099-49a4-a2f0-41d98af1fc7e" width=300>
+<img src="https://github.com/Dcatna/PooTracker/assets/98186105/d76042fc-0adb-4436-9903-8ead71a88f12"  width=300>
