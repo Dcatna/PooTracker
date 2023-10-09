@@ -5,11 +5,13 @@ import androidx.navigation.compose.NavHost
 import my.packlol.pootracker.PoopAppState
 import my.packlol.pootracker.ui.auth.LoginScreen
 import my.packlol.pootracker.ui.home.HomeScreen
+import my.packlol.pootracker.ui.stats.StatsScreen
 import my.packlol.pootracker.ui.theme.composableFadeAnim
 
 sealed class Screen(val route: String) {
     data object Home: Screen("home")
     data object Auth: Screen("auth")
+    data object Stats: Screen("stats")
 }
 
 
@@ -35,6 +37,10 @@ fun AppNavigator(
 
         composableFadeAnim(Screen.Home.route) {
             HomeScreen(poopAppState)
+        }
+        
+        composableFadeAnim(Screen.Stats.route) {
+            StatsScreen(poopAppState = poopAppState)
         }
     }
 }

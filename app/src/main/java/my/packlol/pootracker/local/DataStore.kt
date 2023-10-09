@@ -168,5 +168,5 @@ data class SavedUser(
 data class UserPrefs(
     val darkThemePreference: UserTheme = UserTheme.DeviceTheme,
     val useOffline: Boolean = false,
-    val useDynamicTheme: Boolean = false
+    val useDynamicTheme: Boolean = true
 )

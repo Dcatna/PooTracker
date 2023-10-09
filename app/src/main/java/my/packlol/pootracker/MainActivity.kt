@@ -22,9 +22,11 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Login
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -225,12 +227,35 @@ class MainActivity : ComponentActivity(), KoinComponent {
                             }
                         },
                         actions = {
-//                            IconButton(onClick = {  }) {
-//                                Icon(
-//                                    imageVector = Icons.Default.ShowChart,
-//                                    contentDescription = "statistics"
-//                                )
-//                            }
+                            val backstack by poopAppState.navController.currentBackStackEntryFlow
+                                .collectAsStateWithLifecycle(initialValue = null)
+                            when (backstack?.destination?.route) {
+                                Screen.Auth.route -> Unit
+                                Screen.Stats.route -> {
+                                    IconButton(
+                                        onClick = {
+                                            poopAppState.navController.navigate(Screen.Home.route)
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Home,
+                                            contentDescription = "home"
+                                        )
+                                    }
+                                }
+                                Screen.Home.route -> {
+                                    IconButton(
+                                        onClick = {
+                                            poopAppState.navController.navigate(Screen.Stats.route)
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.ShowChart,
+                                            contentDescription = "statistics"
+                                        )
+                                    }
+                                }
+                            }
                             IconButton(onClick = { settingsDialogVisible = !settingsDialogVisible }) {
                                 Icon(
                                     imageVector = Icons.Default.Settings,

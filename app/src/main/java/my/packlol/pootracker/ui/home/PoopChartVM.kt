@@ -6,10 +6,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -31,9 +33,20 @@ class PoopChartVM(
 ): ViewModel() {
 
     private val monthsPrev = 12
-    private val startDate = LocalDateTime.now()
+    private val startDate = MutableStateFlow(LocalDateTime.now())
 
     private val unselectedCollections = MutableStateFlow<List<String>>(emptyList())
+
+    init {
+        viewModelScope.launch {
+            while(true) {
+                delay(10000)
+                if (startDate.value.dayOfWeek != LocalDate.now().dayOfWeek) {
+                    startDate.emit(LocalDateTime.now())
+                }
+            }
+        }
+    }
 
     val collections = combine(
         poopLogRepository.observeAllCollections(),
@@ -116,43 +129,59 @@ class PoopChartVM(
             emptyList()
         )
 
-    private val prevMonthsLength = List(monthsPrev) {
-        if (it == 0) startDate.dayOfMonth
-        else startDate.month.minus(it.toLong()).length(isLeapYear(startDate.year))
+    private val prevMonthsLength = startDate.map { startDate ->
+        List(monthsPrev) {
+            if (it == 0) startDate.dayOfMonth
+            else startDate.month.minus(it.toLong()).length(isLeapYear(startDate.year))
+        }
     }
 
-    val totalDays = run {
+    val totalDays = prevMonthsLength.combine(startDate) { prevMonthsLength, startDate ->
         val total = prevMonthsLength.sum()
         // do this to start monday on the top
         val remainder =  total % 7
         total - (remainder - startDate.dayOfWeek.value)
     }
+    .stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5_000),
+        0
+    )
 
     fun current(days: Int): LocalDate {
-        return startDate.minusDays((totalDays - days).toLong()).toLocalDate()
+        return startDate.value.minusDays((totalDays.value - days).toLong()).toLocalDate()
     }
 
-    private val monthEndDates = (0..totalDays).mapNotNull { dayIdx ->
+    private val monthEndDates = combine(
+        totalDays,
+        startDate,
+        prevMonthsLength
+    ) { total,startDate, monthLengths ->
+        return@combine (0..total).mapNotNull { dayIdx ->
 
-        val daysRange = totalDays - (dayIdx * 7) + 1..(totalDays - (dayIdx * 7) + 7)
+            val daysRange = total - (dayIdx * 7) + 1..(total - (dayIdx * 7) + 7)
 
-        prevMonthsLength.mapIndexedNotNull { index, _ ->
-            val sumOfPrevMonths = prevMonthsLength.take(index).sum()
-            if (sumOfPrevMonths + prevMonthsLength[index] in daysRange) {
-                dayIdx to startDate.month.minus(index.toLong())
-            } else null
+            monthLengths.mapIndexedNotNull { index, _ ->
+                val sumOfPrevMonths = monthLengths.take(index).sum()
+                if (sumOfPrevMonths + monthLengths[index] in daysRange) {
+                    dayIdx to startDate.month.minus(index.toLong())
+                } else null
+            }
+                .firstOrNull()
         }
-            .firstOrNull()
     }
 
     val poopChartItems = combine(
         poopLogs,
         mutableSelectedDates,
-        mutableSelectedMonths
-    ) { logs, days, months ->
+        mutableSelectedMonths,
+        totalDays,
+        monthEndDates,
+        startDate,
+    ) { logs, days, months, totalDays, monthEndDates, startDate ->
         buildList {
             (0..totalDays).forEach { i ->
-                val month = monthEndDates.find { it.first == i }
+               val month = monthEndDates.find { it.first == i }
                if (month != null) {
                     add(
                         PoopChartItem.MonthTag(

@@ -81,6 +81,11 @@ dependencies {
 
     implementation("androidx.compose.ui:ui-util")
 
+    //charts
+    implementation(libs.vico.compose)
+    implementation(libs.vico.compose.m3)
+    implementation(libs.vico.core)
+
     //Paging 3
     implementation(libs.androidx.paging.runtime)
     implementation(libs.androidx.paging.compose)
@@ -109,9 +114,9 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-analytics-ktx")
-    implementation("com.google.android.gms:play-services-ads:22.4.0")
+    implementation(libs.play.services.ads)
 
-    implementation("com.github.skydoves:balloon-compose:1.6.1")
+    implementation(libs.balloon.compose)
     implementation(libs.play.services.auth)
 
     //ROOM

@@ -95,7 +95,7 @@ fun LoginScreen(
         ) {
             Text(
                 text = pooEmoji,
-                fontSize = 120.sp
+                fontSize = 60.sp
             )
         }
 

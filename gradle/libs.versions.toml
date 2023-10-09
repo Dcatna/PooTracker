@@ -1,6 +1,8 @@
 [versions]
+vico = "1.12.0"
 activityCompose = "1.8.0"
 androidGradlePlugin = "8.1.1"
+balloonCompose = "1.6.1"
 coreKtx = "1.12.0"
 espressoCore = "3.5.1"
 junitVersion = "1.1.5"
@@ -9,6 +11,7 @@ kotlin = "1.9.10"
 lifecycleRuntimeKtx = "2.6.2"
 materialIconsExtended = "1.5.3"
 navigationCompose = "2.7.4"
+playServicesAds = "22.4.0"
 retrofit = "2.9.0"
 gson = "2.10.1"
 roomVersion = "2.5.2"
@@ -35,10 +38,19 @@ androidx-material-icons-extended = { module = "androidx.compose.material:materia
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
 androidx-material3-window-size = { module = "androidx.compose.material3:material3-window-size-class", version.ref = "material3WindowSizeClass" }
+balloon-compose = { module = "com.github.skydoves:balloon-compose", version.ref = "balloonCompose" }
 junit = { module = "junit:junit", version.ref = "junit" }
 
+play-services-ads = { module = "com.google.android.gms:play-services-ads", version.ref = "playServicesAds" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofit-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
+
+# For Jetpack Compose.
+vico-compose = { group = "com.patrykandpatrick.vico", name = "compose", version.ref = "vico" }
+# For `compose`. Creates a `ChartStyle` based on an M3 Material Theme.
+vico-compose-m3 = { group = "com.patrykandpatrick.vico", name = "compose-m3", version.ref = "vico" }
+# Houses the core logic for charts and other elements. Included in all other modules.
+vico-core = { group = "com.patrykandpatrick.vico", name = "core", version.ref = "vico" }
 
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 

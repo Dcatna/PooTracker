@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -81,17 +82,22 @@ fun PoopChart(
     poopChartVM: PoopChartVM = koinViewModel(),
     modifier: Modifier,
 ) {
+    val totalDays by poopChartVM.totalDays.collectAsStateWithLifecycle()
     Row(
         modifier,
     ) {
         val gridState =
-            rememberLazyGridState(initialFirstVisibleItemIndex = poopChartVM.totalDays)
+            rememberLazyGridState(initialFirstVisibleItemIndex = totalDays)
+
+        LaunchedEffect(key1 = totalDays) {
+            gridState.scrollToItem(totalDays)
+        }
 
         val isScrollingUp by gridState.isScrollingUp()
 
         val hideSideText by remember {
             derivedStateOf {
-                isScrollingUp && gridState.isScrollInProgress && poopChartVM.totalDays - gridState.firstVisibleItemIndex > 80
+                isScrollingUp && gridState.isScrollInProgress && totalDays - gridState.firstVisibleItemIndex > 80
             }
         }
 
